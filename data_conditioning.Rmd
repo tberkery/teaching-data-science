@@ -101,6 +101,22 @@ We will work through several examples showcasing how to use the tidyverse and ai
 
 A **CSV**, which stands for "comma separated variables," is a type of file where content in different columns is separated by commas and content in different rows is separated by new-line characters (that is, the character corresponding to the "enter" or "return" key on your keyboard). CSVs are ubiquitous in data science and sports analytics. They are a very efficient and accessible way to encode tables. Think of a CSV as data in an Excel or Google Sheets spreadsheet. In fact, you can easily save an Excel or Google Sheets spreadsheet as a CSV and easily load the data into R.
 
-```{r}
-batting_leaderboard_23 = read_csv("baseball_refence_2023_leaderboard.csv")
+```{r, include = FALSE}
+batting_leaderboard_23 = read_csv("br_batting_leaderboard_2023.csv")
+```
+
+
+```{r, include = FALSE}
+remove_lg_avg_summary = function(df) {
+  df = df[-nrow(df), ]
+  return(df)
+}
+remove_special_characters = function(df, special_characters) {
+  df[] <- lapply(df, function(x) gsub(special_characters, "", x))
+  return(df)
+}
+
+batting_leaderboard_23 = remove_lg_avg_summary(batting_leaderboard_23)
+
+batting_leaderboard_23 = remove_special_characters(batting_leaderboard_23, "[*#]")
 ```
