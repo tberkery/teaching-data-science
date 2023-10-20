@@ -1,0 +1,106 @@
+---
+title: "Data Conditioning in R: An Introduction to the Tidyverse"
+author: "Tad Berkery" # Replace my name with your name
+date: "2023-10-20" # Change this to today's date
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Tutorial developed by Tad Berkery. Designed to be completed in RStudio.
+
+# R Background
+
+**Libraries** in R are a collection of code that other people have written that you get to use. One of the beautiful things about code is that it scales. If I've written the line-by-line instructions on how to build a Linear Regression model, you don't have to and can just run the instructions I wrote on your machine. Libraries tend to specialize in specific tasks. With a quick Google search and some knowledge of what you are looking for, you can find libraries that will deliver functionality for your projects. 
+
+To use a library, you use the syntax `library([Name of Library])`. To make things easy since this is an introductory tutorial, I've specified all of the libraries you will need for this project. Click the green triangular button to run the following code cell.
+
+### Loading Libraries
+```{r warning = FALSE, include = TRUE, message = FALSE}
+library(tidyverse) # Great for data manipulation
+library(reactable) # This library lets us display our data in a pretty and convenient format
+library(ggplot2) # This library assists with data visualization.
+```
+
+What happened? Did you get lots of errors? That's because these libraries haven't been *installed* locally onto your computer yet. Fortunately, installing them is easy and a one-time process! If running the previous code cell unsuccessfully popped up a message that contains a button labeled "Install" to install the libraries, click "Install". Otherwise, copy and paste the following lines into the "Console", which is located right under this coding window. Once you have pasted them in the Console, hit enter on your keyboard.
+
+install.packages("tidyverse@2.0.0")
+install.packages("reactable@0.4.1")
+install.packages("ggplot2@3.4.3")
+
+Note that the general syntax for installing packages is install.packages("[package name]"). I'm adding the @ character and the following [#].[#].[#] to specify specific versions of each package to ensure you and I get the same output when we each separately run this tutorial, but, in general, you don't need to do this.
+
+### Variables and Functions
+
+Now that libraries have been installed and loaded, let's explore the bread and butter of coding in R (or more or less any coding language). A **variable** is a named object that stores information. Variables can take many forms.
+
+```{r, include = TRUE}
+string = "I love watching baseball." # This is a variable consisting of words
+integer1 = 3 # This is a variable storing the number 3
+integer2 = 4 # This is a variable storing the number 4
+boolean = TRUE # This is a boolean variable, indicating it's possible values are true and false
+```
+
+A **function** is a collection of lines of code that accomplish a specific, focused task. They take what are typically called **arguments** or **parameters**, which represent information that is passed into the function from outside sources. Functions can use the syntax `return([Variable of Interest])`, in which case they will populate a variable that they are assigned to with the value of `[Variable of Interest]`.
+
+```{r, include = TRUE}
+# Here, we define functions
+
+add = function(value1, value2) {
+  answer = value1 + value2
+  return(answer)
+}
+
+subtract = function(value1, value2) {
+  answer = value1 - value2
+  return(answer)
+}
+
+multiply = function(value1, value2) {
+  answer = value1 * value2
+  return(answer)
+}
+
+divide = function(value1, value2) {
+  answer = value1 / value2
+  return(answer)
+}
+
+square = function(value) {
+  answer = value ^ 2
+  return(answer)
+}
+
+```
+The above functions represent the key tasks that need to be accomplished by a basic calculator. Note that these functions are presented solely for their simplicity: there are existing operators in R (namely `+`, `-`, `*`, and `/`) which already deliver this functionality in a much more robust manner. However, there are two key things to notice through this example. Notice the syntax with which we can call these functions using our variables defined earlier. Also notice that when we put a variable's name on its own line it prints when we run the code cell.
+```{r, include = TRUE}
+# Here, we call our previously defined functions
+
+sum = add(integer1, integer2)
+sum
+difference = subtract(integer1, integer2)
+difference
+product = multiply(integer1, integer2)
+product
+quotient = divide(integer1, integer2)
+quotient
+```
+Note that in the *Environment* tab on the top right you can see the variables and functions we have defined listed. You can specifically also see the values stored in each of our variables.
+
+Finally, to connect the ideas, note that when you load a library using `library([Name of Library])`, you, pivotally, gain the ability to call any function defined in that library. This is the fundamental reason we use libraries!
+
+### Dataframes
+One particular type of variable that we will work with a lot is called a **dataframe**. Dataframes can be thought of just like any table. Envision a basic spreadsheet in Microsoft Excel or Google Sheets, where data is in rows and columns. You will see that practically all of our data of interest in projects will be in the format of dataframes.
+
+# The Tidyverse
+At this point, we have at least motivated the ideas and fundamentals surrounding the bedrock of data analysis in R. The **tidyverse** is an extremely powerful library (or perhaps more specifically a collection of libraries) that provides extremely powerful tools for interacting wiht dataframes.
+
+## Acquire Data
+We will work through several examples showcasing how to use the tidyverse and aim to make this both interesting and actionable by working with real baseball data.
+
+A **CSV**, which stands for "comma separated variables," is a type of file where content in different columns is separated by commas and content in different rows is separated by new-line characters (that is, the character corresponding to the "enter" or "return" key on your keyboard). CSVs are ubiquitous in data science and sports analytics. They are a very efficient and accessible way to encode tables. Think of a CSV as data in an Excel or Google Sheets spreadsheet. In fact, you can easily save an Excel or Google Sheets spreadsheet as a CSV and easily load the data into R.
+
+```{r}
+batting_leaderboard_23 = read_csv("baseball_refence_2023_leaderboard.csv")
+```
