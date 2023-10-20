@@ -1,0 +1,186 @@
+---
+title: "An Introduction to Web Scraping in R"
+author: "Tad Berkery" # Replace my name with your name
+date: "2022-12-05" # Change this to today's date
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Tutorial developed by Tad Berkery. Designed to be completed in RStudio.
+
+# R Background
+
+**Libraries** in R are a collection of code that other people have written that you get to use. One of the beautiful things about code is that it scales. If I've written the line-by-line instructions on how to build a Linear Regression model, you don't have to and can just run the instructions I wrote on your machine. Libraries tend to specialize in specific tasks. With a quick Google search and some knowledge of what you are looking for, you can find libraries that will deliver functionality for your projects. 
+
+To use a library, you use the syntax `library([Name of Library])`. To make things easy since this is an introductory tutorial, I've specified all of the libraries you will need for this project. Click the green triangular button to run the following code cell.
+
+### Loading Libraries
+```{r warning = FALSE, include = TRUE, message = FALSE}
+library(magrittr) # This library assists with code readability
+library(rvest) # This library assists with web scraping
+library(xml2) # This library assists with handling html
+library(stringi) # This library assists with manipulating Strings (sequences of characters, i.e. words)
+library(reactable) # This library lets us display our data in a pretty and convenient format
+library(tidyverse) # Great for data manipulation
+```
+
+What happened? Did you get lots of errors? That's because these libraries haven't been *installed* locally onto your computer yet. Fortunately, installing them is easy and a one-time process! If running the previous code cell unsuccessfully popped up a message that contains a button labeled "Install" to install the libraries, click "Install". Otherwise, copy and paste the following lines into the "Console", which is located right under this coding window. Once you have pasted them in the Console, hit enter on your keyboard.
+
+install.packages("magittr")
+install.packages("rvest")
+install.packages("xml2")
+install.packages("stringi")
+install.packages("reactable")
+install.packages("tidyverse")
+
+### Variables and Functions
+
+Now that libraries have been installed and loaded, let's explore the bread and butter of coding in R (or more or less any coding language). A **variable** is a named object that stores information. Variables can take many forms.
+
+```{r, include = TRUE}
+string = "I love watching baseball." # This is a variable consisting of words
+integer1 = 3 # This is a variable storing the number 3
+integer2 = 4 # This is a variable storing the number 4
+boolean = TRUE # This is a boolean variable, indicating it's possible values are true and false
+```
+
+A **function** is a collection of lines of code that accomplish a specific, focused task. They take what are typically called **arguments** or **parameters**, which represent information that is passed into the function from outside sources. Functions can use the syntax `return([Variable of Interest])`, in which case they will populate a variable that they are assigned to with the value of `[Variable of Interest]`.
+
+```{r, include = TRUE}
+# Here, we define functions
+
+add = function(value1, value2) {
+  answer = value1 + value2
+  return(answer)
+}
+
+subtract = function(value1, value2) {
+  answer = value1 - value2
+  return(answer)
+}
+
+multiply = function(value1, value2) {
+  answer = value1 * value2
+  return(answer)
+}
+
+divide = function(value1, value2) {
+  answer = value1 / value2
+  return(answer)
+}
+
+square = function(value) {
+  answer = value ^ 2
+  return(answer)
+}
+
+```
+The above functions represent the key tasks that need to be accomplished by a basic calculator. Note that these functions are presented solely for their simplicity: there are existing operators in R (namely `+`, `-`, `*`, and `/`) which already deliver this functionality in a much more robust manner. However, there are two key things to notice through this example. Notice the syntax with which we can call these functions using our variables defined earlier. Also notice that when we put a variable's name on its own line it prints when we run the code cell.
+```{r, include = TRUE}
+# Here, we call our previously defined functions
+
+sum = add(integer1, integer2)
+sum
+difference = subtract(integer1, integer2)
+difference
+product = multiply(integer1, integer2)
+product
+quotient = divide(integer1, integer2)
+quotient
+```
+Note that in the *Environment* tab on the top right you can see the variables and functions we have defined listed. You can specifically also see the values stored in each of our variables.
+
+Finally, to connect the ideas, note that when you load a library using `library([Name of Library])`, you, pivotally, gain the ability to call any function defined in that library. This is the fundamental reason we use libraries!
+
+### Dataframes
+One particular type of variable that we will work with a lot is called a **dataframe**. Dataframes can be thought of just like any table. Envision a basic spreadsheet in Microsoft Excel or Google Sheets, where data is in rows and columns. You will see that practically all of our data of interest in projects will be in the format of dataframes.
+
+### The Tidyverse
+We will talk about this in a future session, but there is an amazingly useful and powerful library in R called the `tidyverse`. It is the primary tool for manipulating dataframes. If you are curious and anxious to learn more, feel free to explore it online before then.
+
+# Introducing Web Scraping
+Now that we understand libraries, variables, and functions at a basic level, we can jump into **web scraping**. Web scraping is using code to autonomously pull data from a website into your coding environment. Let's take a look at some introductory examples for how to scrape baseball data.
+
+### Team Batting Data Example
+Using an interenet browser, go to the following *Baseball Reference* website. Baseball Reference is one of the best places to get baseball data from. Take a look at the website. In particular, take a look at the first table on the webpage. This table provides data on batting metrics by team. *Are there any team performances in a particular metric that seem particularly interesting to you?*
+
+Now, let's work to scrape this top table from the *Baseball Reference* table into R. Run the following code segment using the green triangle to the right of the cell below.
+```{r, include = TRUE}
+url = "https://www.baseball-reference.com/leagues/majors/2021-standard-batting.shtml" # URL of the website you wish to scrape
+html_elements = read_html(url) # Read the HTML code of this website
+tables = html_table(html_elements) # Capture a list of any tables encoded in the HTML
+team_batting = tables[[1]] # Store the first table in a varibale called team_batting
+reactable(team_batting, searchable = TRUE, filterable = TRUE) # Display team_batting in a pretty, interactive format
+```
+Let's walk through what this segment does and how it works. First, note that `team_batting` is now a variable in the Environment (top right corner of your window). Click on `team_batting` in the Environment area. Note how, in a new tab at the top, it opens up `team_batting` and shows you the data you pulled, which excitingly matches the data from *Baseball Reference*. If you look really closely, you'll see that the last few rows are present on the website but not particularly interesting to us (they aren't read in a manner designed for R and also in some cases include duplicates of information we have already captured). We can use basic functions to get rid of those columns. There are many ways to do this, but one simple way is as follows.
+
+```{r, include = TRUE}
+num_rows_of_interest = nrow(team_batting) - 3
+team_batting = head(team_batting, num_rows_of_interest)
+reactable(team_batting, filterable = TRUE, searchable = TRUE)
+```
+We first store the number of rows we want to retain in the variable `num_rows_of_interest`. We then pass this variable as the second of two arguments to the `head` function. Here, the `head` is first given our dataframe (stored in the variable `team_batting`) and second given the value of `num_rows_of_interest`. `head`, which is a function built into the libraries of R, *returns* a dataframe containing only the first `num_rows_of_interest` number of rows of `team_batting`, which we then reassign to be the new value of `team_batting`.
+
+### Exercise: Scrape Team Pitching Data
+Now, you have seen an example of how to scrape team batting data from a given webpage on *Baseball Reference*. Let's check your understanding. In the following code cell, scrape the team pitching data table (the top table) from the following webpage. Be sure to store the results of the table in a dataframe called `team_pitching`.
+
+```{r, include = TRUE}
+# REMOVE THIS COMMENT AND INSERT YOUR ANSWER HERE
+
+# reactable(team_pitching, filterable = TRUE, searchable = TRUE) # Remove the leftmost pound sign and keep this line at the end
+```
+
+# Scraping Multiple Tables on Baseball Reference
+You may have noted thatthere is another table lower on the 2021 batting and pitching webpages on *Baseball Reference*. What if we wanted to scrape it?
+
+Unfortunately, this is slightly more complicated. The basic source of the increased complication is that the second, third, fourth, and so on tables (as they exist) on a webpage are more hidden, existing in what are called comment tags in a less obvious place in the HTML code for the website. Fortunately, through research, I've written a function that will let you scrape this secondary tables. It's okay to not understand how the following function works (it's decently complicated), but I would like you to undestand how to use it.
+```{r, include = TRUE}
+get_tables_from_baseball_reference = function(url) {
+  # Code inspired by https://stackoverflow.com/questions/43476819/not-able-to-scrape-a-second-table-within-a-page-using-rvest
+  
+  urlbbref <- read_html(url)
+  table_one <- xml_find_all(urlbbref, "//table") %>% html_table # First table is in the markup
+  
+  # Additional tables are within the comment tags, ie <!-- tables -->
+  # Which is why your xpath is missing them.
+  
+  alt_tables <- xml2::xml_find_all(urlbbref,"//comment()") %>% { # First get the commented nodes
+    raw_parts <- as.character(.[grep("\\</?table", as.character(.))])  # Find only commented nodes that contain the regex for html table markup
+    strip_html <- stringi::stri_replace_all_regex(raw_parts, c("<\\!--","-->"),c("",""),
+                                                  vectorize_all = FALSE) # Remove the comment begin and end tags
+    lapply(grep("<table", strip_html, value = TRUE), function(i){ # Loop through pieces that have tables within markup and apply the same funcs
+      rvest::html_table(xml_find_all(read_html(i), "//table")) %>% 
+        .[[1]]
+    })
+  }
+  
+  all_tables <- c(table_one, alt_tables) # Put all the data frames into a list.
+  return(all_tables)
+}
+
+```
+### Exercise: Scraping Player Batting Stats
+In the following cell, call the above function and store the batting stats by player in a variable called `player_batting_stats`.
+What argument do you need to pass in your call to the function? Does this function call return any value? If so, how can you store that in a variable?
+
+```{r, include = TRUE}
+# REMOVE THIS COMMENT AND INSERT YOUR ANSWER HERE
+
+# reactable(player_batting_stats, filterable = TRUE, searchable = TRUE) # Remove the leftmost pound sign and keep this line at the end
+```
+
+### Exercise Scraping Player Pitching Stats
+Replicate the same exercise, this time for player pitching stats.
+```{r, include = TRUE}
+# REMOVE THIS COMMENT AND INSERT YOUR ANSWER HERE
+
+# reactable(player_pitching_stats, filterable = TRUE, searchable = TRUE) # Remove the leftmost pound sign and keep this line at the end
+```
+
+# That's a Wrap
+This wraps up our introduction to data scraping. Click the button that says "Knit" next to the blue circular icon at the top of this coding window, located closer to the left of the toolbar. After a few seconds, this will produce an HTML document, which you can open in internet browsers like Google Chrome, showing your code and this tutorial (it will also open in a new pop-up R window). Open this pop-up window. Click "Open in Browser" at the top right. You can then right click, click "Save As", and save this HTML file somewhere on your computer. **Please be sure to save BOTH the HTML file this produced AND this file (called an RMarkdown document, which has the suffix .rmd) so you can access it during future sessions**. Feel free to email both files to yourself, save them both on Google Drive, or find another method that works to you. More to come in future projects, where we will move onto manipulating data (including data you will scrape) and creating visualizations that let us turn raw numbers into actionable insights.
+
+
+
