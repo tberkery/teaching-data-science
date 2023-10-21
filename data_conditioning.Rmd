@@ -158,11 +158,49 @@ Now let's try some slightly more complex examples.
 Suppose I wanted to use the above functions to compute `3 + 6 - 5 + 4`. We know that this equals `8`. Let's use our functions to arrive at this answer and do it both using the traditional format and the piping operator.
 
 ```{r}
-
+# Traditional Method
+sum_terms_1_and_2 = add(3, 6)
+sum_terms_2_and_3 = subtract(sum_terms_1_and_2, 5)
+sum = add(sum_terms_2_and_3, 4)
+sum
 ```
+Now consider doing this with the piping operator:
+```{r}
+# Traditional Method
+sum = add(3, 6) %>%
+  subtract(5) %>%
+  add(4)
+sum
+```
+Again, we get the same result and have performed the same operations. However, note in this more complex example how much less we had to type for the piping operator implementation. This is why we use the piping operator: it keeps things short and sweet and helps keep your Environment (recall this is in the top right panel of your RStudio session) as decluttered as possible by helping to prevent you from having to declare tons of intermediate variables (such as `sum_terms_1_and_2` and `sum_terms_2_and_3`).
 
-A few remarks on this:
+A few remarks on the piping operator:
 
 * Recall that an object can be more or less anything: a dataframe, a variable, a function... you name it.
 * If the function specified immediately after the piping operator does not take at least one argument, using the piping operator with an object will result in an error.
-* You can (and typically should) still use the piping operator with a function that takes mulitple arguments. Just understand that you can only pipe one argument into the function.
+* You can (and typically should) still use the piping operator with a function that takes multiple arguments. Just understand that you can only pipe one argument into the function.
+
+## Exercise
+
+* Earlier when processing the *Baseball Reference* data, I used the following lines of code:
+
+```{r}
+batting_leaderboard_23 = remove_lg_avg_summary(batting_leaderboard_23)
+
+batting_leaderboard_23 = remove_special_characters(batting_leaderboard_23, "[*#]")
+
+batting_leaderboard_23 = identify_numeric_columns(batting_leaderboard_23)
+```
+
+Rewrite this code to use the piping operator so it is more compact.
+```{r}
+batting_leaderboard_23 = read_csv("br_batting_leaderboard_2023.csv")
+# YOUR SOLUTION HERE
+```
+
+* Suppose I ask you to evaluate this expression: `3 + 5 / (4 + 3 *2). Using the piping operator as much as possible, write code to print the answer:
+```{r}
+# YOUR SOLUTION HERE
+```
+
+# Core Tidyverse Functions
