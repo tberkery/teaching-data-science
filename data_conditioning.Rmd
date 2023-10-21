@@ -35,7 +35,7 @@ Note that the general syntax for installing packages is install.packages("[packa
 
 Now that libraries have been installed and loaded, let's explore the bread and butter of coding in R (or more or less any coding language). A **variable** is a named object that stores information. Variables can take many forms.
 
-```{r, include = TRUE}
+```{r}
 string = "I love watching baseball." # This is a variable consisting of words
 integer1 = 3 # This is a variable storing the number 3
 integer2 = 4 # This is a variable storing the number 4
@@ -44,7 +44,7 @@ boolean = TRUE # This is a boolean variable, indicating it's possible values are
 
 A **function** is a collection of lines of code that accomplish a specific, focused task. They take what are typically called **arguments** or **parameters**, which represent information that is passed into the function from outside sources. Functions can use the syntax `return([Variable of Interest])`, in which case they will populate a variable that they are assigned to with the value of `[Variable of Interest]`.
 
-```{r, include = TRUE}
+```{r}
 # Here, we define functions
 
 add = function(value1, value2) {
@@ -74,7 +74,7 @@ square = function(value) {
 
 ```
 The above functions represent the key tasks that need to be accomplished by a basic calculator. Note that these functions are presented solely for their simplicity: there are existing operators in R (namely `+`, `-`, `*`, and `/`) which already deliver this functionality in a much more robust manner. However, there are two key things to notice through this example. Notice the syntax with which we can call these functions using our variables defined earlier. Also notice that when we put a variable's name on its own line it prints when we run the code cell.
-```{r, include = TRUE}
+```{r}
 # Here, we call our previously defined functions
 
 sum = add(integer1, integer2)
@@ -101,12 +101,12 @@ We will work through several examples showcasing how to use the tidyverse and ai
 
 A **CSV**, which stands for "comma separated variables," is a type of file where content in different columns is separated by commas and content in different rows is separated by new-line characters (that is, the character corresponding to the "enter" or "return" key on your keyboard). CSVs are ubiquitous in data science and sports analytics. They are a very efficient and accessible way to encode tables. Think of a CSV as data in an Excel or Google Sheets spreadsheet. In fact, you can easily save an Excel or Google Sheets spreadsheet as a CSV and easily load the data into R.
 
-```{r, include = FALSE}
+```{r, warning = FALSE, message = FALSE}
 batting_leaderboard_23 = read_csv("br_batting_leaderboard_2023.csv")
 ```
 
 
-```{r, include = FALSE}
+```{r}
 remove_lg_avg_summary = function(df) {
   df = df[-nrow(df), ]
   return(df)
@@ -138,7 +138,7 @@ batting_leaderboard_23 = identify_numeric_columns(batting_leaderboard_23)
 
 Here, note that I define three functions myself: `remove_lg_avg_summary`, `remove_special_characters`, and `identify_numeric_columns.` These functions are somewhat complicated and firmly beyond the scope of this tutorial. At a high level, `remove_lg_avg_summary` removes the last row of the initial *Baseball Reference* dataframe (which is desirable because this is league-average row inserted by baseball reference that does not actually correspond to a player season). `remove_special_characters` removes asterisks, number signs, and other special characters appended to player names indicating footnotes and additional references on the *Baseball Reference* website, which is both not of interest and problematic for us since we will want to ensure that, e.g., Shohei Ohtani is always listed as `Shohei Ohtani` and never `Shohei Ohtani*` or `Shohei Ohtani#` for lookup purposes. Finally, `identify_numeric_columns` tells R that columns that look like they contain numbers should be interpreted as containing information about a numeric variable. This is trivial to a human but important for how R handles various operations when it can't detect this automatically. No need to understand the code inside any of these functions... it's a little more complicated than we want to focus on right now. Just understand the idea that I can take a dataframe and pass it as an argument to a function to manipulate it in a way that better suits my needs.
 
-# The Piping Operator
+## The Piping Operator
 In R, the sequence of characters `%>%` is special: it is called the **piping operator**. The piping operator will likely seem weird and confusing at first but in the end will be second-nature and uber-convenient. The piping operator is defined in the form of [object] %>% [name of function that takes at least one object]. The key of the piping operator is that it takes the object before the pipe and passes it as the first argument to the function immediately following the piping operator. 
 
 Here's a simple example, using the calculator-style functions we defined above.
@@ -180,9 +180,11 @@ A few remarks on the piping operator:
 * If the function specified immediately after the piping operator does not take at least one argument, using the piping operator with an object will result in an error.
 * You can (and typically should) still use the piping operator with a function that takes multiple arguments. Just understand that you can only pipe one argument into the function.
 
-## Exercise
+You will explore some of these properties in the following exercises:
 
-* Earlier when processing the *Baseball Reference* data, I used the following lines of code:
+### Exercise: The Piping Operator #1
+
+Earlier when processing the *Baseball Reference* data, I used the following lines of code:
 
 ```{r}
 batting_leaderboard_23 = remove_lg_avg_summary(batting_leaderboard_23)
@@ -194,13 +196,84 @@ batting_leaderboard_23 = identify_numeric_columns(batting_leaderboard_23)
 
 Rewrite this code to use the piping operator so it is more compact.
 ```{r}
-batting_leaderboard_23 = read_csv("br_batting_leaderboard_2023.csv")
 # YOUR SOLUTION HERE
 ```
 
-* Suppose I ask you to evaluate this expression: `3 + 5 / (4 + 3 *2 )`. Using the piping operator as much as possible, write code to print the answer:
+### Exercise: The Piping Operator #2
+Suppose I ask you to evaluate this expression: `3 + 5 / (4 + 3 *2 )`. Using the piping operator as much as possible, write code to print the answer:
 ```{r}
 # YOUR SOLUTION HERE
 ```
 
-# Core Tidyverse Functions
+Now that we are familiar with the piping operator, we can explore the core functions that make up the tidyverse.
+
+## `SELECT`
+**select** is a tidyverse function that lets you specify a subset of columns in a dataframe. Suppose you just want to see the number of doubles, triples, and homeruns for every player (row). *select* lets us do this in a nice straightforward manner.
+
+```{r}
+box_score_23 = batting_leaderboard_23 %>%
+  select(Name, `2B`, `3B`, HR)
+```
+
+One remark here: note that any columns whose names start with a numeric character (e.g. 2, 3) must be wrapped in the \` character on each side. Be sure to use this syntax when referring to columns that start with a number as the first character in their name. No need to do it for columns where this isn't the case (such as e.g. HR).
+
+### Exercise: `SELECT` #1
+Locate the "Console", which in RStudio should be the bottom left of your current window (the "Console" tab is to the left of the "Terminal" and "Background Jobs" tabs... make sure you have clicked on "Console"). This is a space where you can run code that still creates variables in your environment but isn't part of the overall script or document you are working on. This is great for one-off commands to explore your data.
+
+In the Console area, you should see what looks like a greater than sign. Click right next to it and type the following command: `colnames(batting_leaderboard_23)` (note that the \` on the front and back are just for fomatting in this current document, don't include them when putting this command in the console). Note that this shows you a *vector* (like a list) of every column in the dataframe `batting_leaderboard_23`. 
+
+Take a subset of the columns of your choosing, and call *select* such that you produce a dataframe containing only these columns.
+
+```{r}
+# YOUR SOLUTION HERE
+```
+
+### Exercise: `SELECT` #2
+* In the Environment tab at the top right, click on `box_score_23` after running the previous coding cell. Note that the labels at the top of the dataframe for each column will sort the dataframe by the respective column in different ways each time when you click on it. Use this to visually identify who led the league in each of doubles, triples, and homeruns in 2023.
+
+```{}
+Doubles leader: YOUR SOLUTION HERE
+Tripes leader: YOUR SOLUTION HERE
+Homeruns leader: YOUR SOLUTION HERE
+```
+
+# `MUTATE`
+Being able to select columns is important but won't let you perform end-to-end data analysis on its own. Another function of the tidyverse that is very useful is **mutate**. Mutate lets you either adjust existing columns or (more commonly) create new columns, including by performing operations on other columns.
+
+Note in the above example that the number of singles from each player isn't provided. It would be nice to have that in our dataframe. The mutate function lets us do this.
+
+```{r}
+bl23_with_singles = batting_leaderboard_23 %>%
+  mutate(`1B` = H - (HR + `3B` + `2B`))
+reactable(bl23_with_singles)
+```
+
+### Exercise: `MUTATE` #1
+
+[**Batting average**](https://www.mlb.com/glossary/standard-stats/batting-average) is defined as total hits divided by total at bats. You can see that batting average is already a column in the dataframe (`BA`). Let's see if you can use mutate to calculate it properly for each player.
+
+```{r}
+bl23_calculating_BA = NULL
+# REPLACE NULL WITH YOUR SOLUTION
+```
+### Exercise: `MUTATE` #2
+[**Slugging percentage**](https://www.mlb.com/glossary/standard-stats/slugging-percentage) is defined as `(1B + 2 * 2B + 3 * 3B + 4 * HR) / AB`. Calculate slugging percentage using operations in a mutate function call. Make sure your estimation of slugging percentage matches the current `SLG` column.
+
+```{r}
+# YOUR SOLUTION HERE
+```
+
+### Exercise: `MUTATE` #3.
+Read the definition for [**on-base percentage**](https://www.mlb.com/glossary/standard-stats/on-base-percentage). Update your implementation in the previous cell to calculate it using a call to *mutate*. After performing this computation, observe that `OPS` is defined as the sum of on-base percentage (`OBP`) and slugging (`SLG`). Write another mutate statement in the previous cell to compute `OPS` from scratch. Does your answer match the value in the initial `OPS` column of the dataset?
+
+### Exercise: Reflection
+No coding to do here. Just looking for your thoughts. At this point, you have analyzed the underlying calculation of batting average (`BA`), on-base percentage (`OBP`), slugging (`SLG`), and on-base-plus-slugging (`OPS`). In a paragraph or two, analyze the strengths and weaknesses of each metric. In relation to winning baseball games, which do you think provides the most complete picture of the offensive contributions of a player?
+
+```{}
+YOUR ANSWER HERE
+```
+
+
+
+
+
