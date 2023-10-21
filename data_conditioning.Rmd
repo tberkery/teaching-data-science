@@ -198,7 +198,7 @@ batting_leaderboard_23 = read_csv("br_batting_leaderboard_2023.csv")
 # YOUR SOLUTION HERE
 ```
 
-* Suppose I ask you to evaluate this expression: `3 + 5 / (4 + 3 *2). Using the piping operator as much as possible, write code to print the answer:
+* Suppose I ask you to evaluate this expression: `3 + 5 / (4 + 3 *2 )`. Using the piping operator as much as possible, write code to print the answer:
 ```{r}
 # YOUR SOLUTION HERE
 ```
