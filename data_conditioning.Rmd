@@ -116,7 +116,53 @@ remove_special_characters = function(df, special_characters) {
   return(df)
 }
 
+identify_numeric_columns = function(df) {
+  is_numeric_column <- function(x) {
+    all(grepl("^\\d+\\.?\\d*$", x))
+  }
+  for (col_name in names(df)) {
+    if (is_numeric_column(df[[col_name]])) {
+      df[[col_name]] <- as.numeric(df[[col_name]])
+    }
+  }
+  return(df)
+}
+
 batting_leaderboard_23 = remove_lg_avg_summary(batting_leaderboard_23)
 
 batting_leaderboard_23 = remove_special_characters(batting_leaderboard_23, "[*#]")
+
+batting_leaderboard_23 = identify_numeric_columns(batting_leaderboard_23)
+
 ```
+
+Here, note that I define three functions myself: `remove_lg_avg_summary`, `remove_special_characters`, and `identify_numeric_columns.` These functions are somewhat complicated and firmly beyond the scope of this tutorial. At a high level, `remove_lg_avg_summary` removes the last row of the initial *Baseball Reference* dataframe (which is desirable because this is league-average row inserted by baseball reference that does not actually correspond to a player season). `remove_special_characters` removes asterisks, number signs, and other special characters appended to player names indicating footnotes and additional references on the *Baseball Reference* website, which is both not of interest and problematic for us since we will want to ensure that, e.g., Shohei Ohtani is always listed as `Shohei Ohtani` and never `Shohei Ohtani*` or `Shohei Ohtani#` for lookup purposes. Finally, `identify_numeric_columns` tells R that columns that look like they contain numbers should be interpreted as containing information about a numeric variable. This is trivial to a human but important for how R handles various operations when it can't detect this automatically. No need to understand the code inside any of these functions... it's a little more complicated than we want to focus on right now. Just understand the idea that I can take a dataframe and pass it as an argument to a function to manipulate it in a way that better suits my needs.
+
+# The Piping Operator
+In R, the sequence of characters `%>%` is special: it is called the **piping operator**. The piping operator will likely seem weird and confusing at first but in the end will be second-nature and uber-convenient. The piping operator is defined in the form of [object] %>% [name of function that takes at least one object]. The key of the piping operator is that it takes the object before the pipe and passes it as the first argument to the function immediately following the piping operator. 
+
+Here's a simple example, using the calculator-style functions we defined above.
+
+```{r}
+var1 = 3
+var2 = 12
+sum = add(var1, var2) # traditional method presented above
+sum # display result
+new_sum = var1 %>% add(var2) # same operation but using piping operator
+new_sum # display result (it will be the same)
+```
+
+In this simple example, note that you have performed the same operation in both cases (just with different syntax). In both cases, the add operator is receiving two arguments (`var1` and `var2`, in that order).
+
+Now let's try some slightly more complex examples.
+Suppose I wanted to use the above functions to compute `3 + 6 - 5 + 4`. We know that this equals `8`. Let's use our functions to arrive at this answer and do it both using the traditional format and the piping operator.
+
+```{r}
+
+```
+
+A few remarks on this:
+
+* Recall that an object can be more or less anything: a dataframe, a variable, a function... you name it.
+* If the function specified immediately after the piping operator does not take at least one argument, using the piping operator with an object will result in an error.
+* You can (and typically should) still use the piping operator with a function that takes mulitple arguments. Just understand that you can only pipe one argument into the function.
