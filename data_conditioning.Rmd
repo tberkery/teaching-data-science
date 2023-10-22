@@ -109,6 +109,7 @@ batting_leaderboard_23 = read_csv("br_batting_leaderboard_2023.csv")
 ```{r}
 remove_lg_avg_summary = function(df) {
   df = df[-nrow(df), ]
+  df = filter(df, Tm != 'TOT')
   return(df)
 }
 remove_special_characters = function(df, special_characters) {
@@ -186,7 +187,7 @@ You will explore some of these properties in the following exercises:
 
 Earlier when processing the *Baseball Reference* data, I used the following lines of code:
 
-```{r}
+```{}
 batting_leaderboard_23 = remove_lg_avg_summary(batting_leaderboard_23)
 
 batting_leaderboard_23 = remove_special_characters(batting_leaderboard_23, "[*#]")
@@ -194,7 +195,7 @@ batting_leaderboard_23 = remove_special_characters(batting_leaderboard_23, "[*#]
 batting_leaderboard_23 = identify_numeric_columns(batting_leaderboard_23)
 ```
 
-Rewrite this code to use the piping operator so it is more compact.
+Rewrite this code to use the piping operator so it is more compact. To keep our Environment clean, name your dataframe `bl_23_piping` instead of `bl_23.` This is to ensure the result of your notebook runs smoothly even if you answer here is incorrect.
 ```{r}
 # YOUR SOLUTION HERE
 ```
@@ -273,7 +274,89 @@ No coding to do here. Just looking for your thoughts. At this point, you have an
 YOUR ANSWER HERE
 ```
 
+## `GROUP BY`
+Take closer look at our conditioned dataframe (`batting_leaderboard_23`). Do you notice anything weird about the rows?
 
+If you look closely, you might notice that players who played on mulitiple teams during the 2023 season have multiple rows in the dataframe. For example, consider at Tommy Pham. Note that if you click on `batting_leaderboard_23` in the Environment tab at the top right, you will then see a little "Filter" button somewhat towards the top left of your screen. Click this "Filter" button and, in the search bar that appears under the `Name` column, type "Tommy Pham". Then click enter. Note that he has two rows: one corresponding to when he played for the New York Mets (NYM) and one for when he played with the Arizona Diamondbacks (ARI).
 
+It would be nice here (and is often necessary) to have exactly one record per player season. Let's consolidate these two records for Tommy Pham (and any other players with comparable multi-team situations). Here's how we can do it:
 
+```{r}
+bl23_consolidated = batting_leaderboard_23 %>%
+  group_by(Name) %>%
+  mutate(across(where(is.double), ~mean(., na.rm = TRUE)),
+         across(where(is.integer), ~sum(., na.rm = TRUE)))
+
+```
+
+There's a lot going on here. Let's dissect it:
+
+* `group_by(Name)` suggests that we want to consider all players with a given `Name` value (e.g. Tommy Pham). Thinking back to our earlier example, this suggests that we want to consider all rows with `Name` "Tommy Pham" together.
+
+* After specifying our grouping mechanisms with the `group_by`, we want to perform operations using `mutate` that aggregate row(s) that are applied to each *group* individually. However, think for a moment about the types of stats we have. Some are *volume*-based metrics (e.g. games played, plate appearance, hits, homeruns, etc.). Some are *rate*-based (e.g. batting average, on-base percentage, slugging percentage, on-base-plus-slugging, etc.). It makes sense to *sum* volume-based stats but *average* rate based stats. Note that Pham hit `.268` with the New York Mets and `.241` with the Arizona Diamondbacks in 2023, but saying that he hit `.268 + .241 = .509` would be both inaccurate and not sensible since batting average is a rate-based stat. On the other hand, Pham played `70` games with the Mets and `59` with the Diamondbacks and saying he played `70 + 59 = 129` games over the course of the 2023 season makes great sense since games played is a volume-based stat. We account for this distinction between volume-based stats and rate-based stats using the two cases--the `where(is.double)` case and the `where(is.integer)` case--separately. Specifically, a number here is a double if it is like a decimal (like a batting average, which is a decimal between 0.00 and 1.00) and an integer if it is a round number (like a games played value). You can see that we apply the `mean` function to the case involving `where(is.double)` (the rate-based metrics) and the `sum` function to the case involving `where(is.integer)` (the volume-based metrics).
+
+* It's worth discussing the `across` function and its unique format in more detail. `across` is used within a `mutate` subject to the following format:
+[dataframe] = [dataframe] %>%
+  mutate(across([condition], ~[function]))
+In our example, we use our `batting_leaderboard_23` dataframe with the condition either being `where(is.integer)` or `where(is.double)` to extract a vector consisting of all columns with decimal-like data and all columns of round-number-like data, respectively. We then apply either the `mean` or `sum` function depending on the situation (rate-based metric vs. volume-based metric). Checkout the result:
+```{r}
+bl23_consolidated = batting_leaderboard_23 %>%
+  group_by(Name) %>%
+  mutate(across(where(is.double), ~mean(., na.rm = TRUE)),
+            across(where(is.integer), ~sum(., na.rm = TRUE)))
+reactable(bl23_consolidated, searchable = TRUE)
+```
+
+This is close to what we want, but look closely. Revisit our Tommy Pham example. You will note that he still appears in two rows: his Mets row and his Diamondbacks row are still present. But if you look closely, all of the stats in each of these rows are now equal. Why is this?
+
+We see the stats are the same because we have mutated every stats column after grouping them together. So the stats you see in each Tommy Pham row are actually the mean (for rate-based stats) and sum (for volume-based stats) across all rows corresponding to Tommy Pham. However, we haven't performed any operations on the dataframe to reduce the number of rows. We can consolidate each of these rows (such as the multiple Tommy Pham) rows to one row per-player using distinct. Note a few things about our call to distinct:
+* We specify the `Name` column within the distinct column to indicate that we want one row for every individual player `Name`.
+* We specify `.keep_all = TRUE` to indicate that we want to keep all columns in the dataframe (that we want to keep all of the stats columns in addition to the `Name` for each player).
+
+```{r}
+bl23_consolidated = batting_leaderboard_23 %>%
+  group_by(Name) %>%
+  mutate(across(where(is.double), ~mean(., na.rm = TRUE)),
+        across(where(is.integer), ~sum(., na.rm = TRUE))) %>%
+  distinct(Name, .keep_all = TRUE)
+reactable(bl23_consolidated, searchable = TRUE)
+```
+
+## `FILTER`
+Sometimes it is useful to be able to parse our dataframe to only include rows satisfying certain criteria. We can accomplish this using the tidyverse [**filter**](https://dplyr.tidyverse.org/reference/filter.html) function.
+
+Soon, we will calculate statistics exploring conceptions of an average MLB player. When doing such analyses, ensuring that the data you use to calculate these statistics is representative of the average MLB player is important. On one hand, we don't want to only include players who mostly play in the minor leagues and appear in the major leagues but have very few plate appearances in the major leagues. On the other hand, if we only permit players with an overly high amount of plate appearances, we will likely bias our dataset towards better players (assuming at a high level that better players get more at bats), in which case the picture we get from our calculated statistics will be distorted in the opposite direction. In this exercise, you will explore a variety of minimum plate apperance thresholds to try to balance the two aforementioned factors.
+
+### Exercise: `Filtering` #2
+This question requires no code but offers important context. What is the difference between an [**at bat (`AB`)**](https://www.mlb.com/glossary/standard-stats/at-bat) and a [**plate appearance (`PA`)**](https://www.mlb.com/glossary/standard-stats/plate-appearance)?
+
+```{}
+YOUR ANSWER HERE
+```
+
+### Exercise: `Filtering` #3
+For simplicity, we will filter based on plate appearances (although at bats would be fine) just to ensure consistency among all students. Explore several minimum PA thresholds using filter statements. Take a look at the resulting dataframes. What thresholds seem potentaially reasonable? What thresholds seem unreasonable?
+
+```{r}
+
+```
+
+# Exericse: `Filtering` #4
+A useful command for visualizing distributions of variables in a dataset is the **summary** command. Try it here. Note that the summary function takes a vector (i.e. a column of a dataframe rather than the whole dataframe). We can access a specific column from the dataframe as a vector using the \$ notation: [dataframe]\$[column].
+```{r}
+summary(bl23_consolidated$PA)
+```
+Also note that we can easily extract the mean, median, standard deviation, max, min, sum etc. of a vector (and note that a column of a dataframe is a vector) using existing built-in functions from R.
+```{r}
+mean(bl23_consolidated$PA, na.rm = TRUE)
+median(bl23_consolidated$PA, na.rm = TRUE)
+sd(bl23_consolidated$PA, na.rm = TRUE)
+max(bl23_consolidated$PA, na.rm = TRUE)
+min(bl23_consolidated$PA, na.rm = TRUE)
+sum(bl23_consolidated$PA, na.rm = TRUE)
+
+```
+
+## Pivoting and More Complex Mutates
+Let's experiment a little bit more here. Suppose I want to explore the 
 
