@@ -129,7 +129,7 @@ batting_leaderboard_23 = read_csv("br_batting_leaderboard_2023.csv")
 ```
 Let's take a quick look at our data:
 ```{r}
-reactable(batting_leaderboard_23, searcable = TRUE, filterable = TRUE)
+reactable(batting_leaderboard_23, searchable = TRUE, filterable = TRUE)
 ```
 Note that `reactable` is a function in the `reactable` library I loaded that simply lets us view dataframes more nicely and interactively. It would have been perfectly okay to instead just include `batting_leaderboard_23` to display the dataframe without using `reactable`, but we use it here to demonstrate its usefulness in displaying dataframes. 
 
@@ -155,6 +155,9 @@ identify_numeric_columns = function(df) {
       df[[col_name]] <- as.numeric(df[[col_name]])
     }
   }
+  df = mutate(df, BA = as.numeric(BA), OBP = as.numeric(OBP),
+              SLG = as.numeric(SLG), OPS = as.numeric(OPS),
+              `OPS+` = as.numeric(`OPS+`))
   return(df)
 }
 
@@ -376,7 +379,7 @@ YOUR ANSWER HERE
 For simplicity, we will filter based on plate appearances (although at bats would be fine) just to ensure consistency among all students. Explore several minimum PA thresholds using filter statements. Take a look at the resulting dataframes. What thresholds seem potentaially reasonable? What thresholds seem unreasonable?
 
 ```{r}
-
+# YOUR SOLUTION HERE
 ```
 
 # Exericse: `Filtering` #4
@@ -395,6 +398,72 @@ sum(bl23_consolidated$PA, na.rm = TRUE)
 
 ```
 
-## Pivoting and More Complex Mutates
-Let's experiment a little bit more here. Suppose I want to explore the 
+Let's experiment a little bit more here. Suppose I want to explore some statistics by group from my player season data. Let's try a few cases.
 
+## `SUMMARIZE`
+Imagine that I want to compute the average statistical profile by team for 2023. I can do this using effective grouping strategies on my 2023 batting leaderboard data.
+
+Let's break this into digestible parts. First, because I want to aggregtate at the team level, I will use a `group_by` statement involving the `Tm` column.
+
+```{r}
+avg_by_pos = bl23_consolidated %>%
+  group_by(Tm) %>%
+  mutate(across(where(is.numeric), ~mean(., na.rm = TRUE))) %>%
+  select(Tm, Age, G, PA, AB, R, H, `2B`, `3B`, `HR`, RBI, SB, CS, BB, SO, BA, OBP, SLG, OPS, `OPS+`, TB, GDP, HBP, SH, SF, IBB) %>%
+  distinct(Tm, .keep_all = TRUE)
+```
+
+### Exercise: Summarize #1
+By average age of batters, which teams on average have the oldest hitters in baseball? (No additional code needed to answer this)
+```{}
+YOUR ANSWER HERE
+```
+### Exercise: Summarize #2
+In 2023, which team do you think was the best offensive team in baseball, and why? (No additional code needed to answer this)
+```{}
+YOUR ANSWER HERE
+```
+
+An interesting note is that there is actually another way we could have assembled this summary by team using a function called `summarize`. I find that this can be more complex to write but much cleaner and faster sometimes if written correctly.
+
+Let's simplify the example some to only consider BA, OBP, SLG, and OPS.
+
+```{r}
+avg_by_team = bl23_consolidated %>%
+  group_by(Tm) %>%
+  summarize(
+    mean_BA = mean(BA, na.rm = TRUE),
+    sd_BA = sd(BA, na.rm = TRUE),
+    mean_OBP = mean(OBP, na.rm = TRUE),
+    sd_OBP = sd(OBP, na.rm = TRUE),
+    mean_SLG = mean(SLG, na.rm = TRUE),
+    sd_SLG = sd(SLG, na.rm = TRUE),
+    mean_OPS = mean(OPS, na.rm = TRUE),
+    sd_OPS = sd(OPS, na.rm = TRUE)
+  )
+reactable(avg_by_team, searchable = TRUE, filterable = TRUE)
+```
+
+This is the same as running:
+```{r}
+avg_by_team = bl23_consolidated %>%
+  group_by(Tm) %>%
+  mutate(
+    mean_BA = mean(BA, na.rm = TRUE),
+    sd_BA = sd(BA, na.rm = TRUE),
+    mean_OBP = mean(OBP, na.rm = TRUE),
+    sd_OBP = sd(OBP, na.rm = TRUE),
+    mean_SLG = mean(SLG, na.rm = TRUE),
+    sd_SLG = sd(SLG, na.rm = TRUE),
+    mean_OPS = mean(OPS, na.rm = TRUE),
+    sd_OPS = sd(OPS, na.rm = TRUE)
+  ) %>%
+  distinct(Tm, .keep_all = TRUE)
+reactable(avg_by_team, searchable = TRUE, filterable = TRUE)
+```
+# Conclusion
+By now, hopefully you have developed some feel for the fundamentals of the `tidyverse`. Good job! The `tidyverse` takes practice, but, if you have done all of the exercises so far, you're on track to mastering the fundamentals.
+
+Save this notebook *and* *click the `Knit` button at the top middle of this window* (it has an icon that looks like a blue spool of thread and a needle). This will write all of this text, code, and the output of running your code to a `.html` file. However you wish (email, Google Drive, OneDrive, flashdrive), make a copy of both `data_conditioning.Rmd` and `data_conditioning.html` and *image and data files in the same folder from this project* and ensure you have shared them with yourself in a way where you will have future access.
+
+Good job and until next time! Great work today.
