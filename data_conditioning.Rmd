@@ -1,7 +1,7 @@
 ---
 title: "Data Conditioning in R: An Introduction to the Tidyverse"
 author: "Tad Berkery" # Replace my name with your name
-date: "2023-10-20" # Change this to today's date
+date: "2023-10-23" # Change this to today's date
 output: html_document
 ---
 
