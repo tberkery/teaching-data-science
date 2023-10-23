@@ -42,7 +42,7 @@ integer2 = 4 # This is a variable storing the number 4
 boolean = TRUE # This is a boolean variable, indicating it's possible values are true and false
 ```
 
-A **function** is a collection of lines of code that accomplish a specific, focused task. They take what are typically called **arguments** or **parameters**, which represent information that is passed into the function from outside sources. Functions can use the syntax `return([Variable of Interest])`, in which case they will populate a variable that they are assigned to with the value of `[Variable of Interest]`.
+A **function** is a collection of lines of code that accomplish a specific, focused task. Functions take what are typically called **arguments** or **parameters**, which represent information that is passed into the function from outside sources. Functions can use the syntax `return([Variable of Interest])`, in which case they will populate a variable that they are assigned to with the value of `[Variable of Interest]`.
 
 ```{r}
 # Here, we define functions
@@ -94,17 +94,46 @@ Finally, to connect the ideas, note that when you load a library using `library(
 One particular type of variable that we will work with a lot is called a **dataframe**. Dataframes can be thought of just like any table. Envision a basic spreadsheet in Microsoft Excel or Google Sheets, where data is in rows and columns. You will see that practically all of our data of interest in projects will be in the format of dataframes.
 
 # The Tidyverse
-At this point, we have at least motivated the ideas and fundamentals surrounding the bedrock of data analysis in R. The **tidyverse** is an extremely powerful library (or perhaps more specifically a collection of libraries) that provides extremely powerful tools for interacting wiht dataframes.
+At this point, we have at least motivated the ideas and fundamentals surrounding the bedrock of data analysis in R. The [**tidyverse**](https://www.tidyverse.org/packages/) is an extremely powerful library (or perhaps more specifically a collection of libraries) that provides extremely powerful tools for interacting with dataframes.
 
 ## Acquire Data
 We will work through several examples showcasing how to use the tidyverse and aim to make this both interesting and actionable by working with real baseball data.
 
 A **CSV**, which stands for "comma separated variables," is a type of file where content in different columns is separated by commas and content in different rows is separated by new-line characters (that is, the character corresponding to the "enter" or "return" key on your keyboard). CSVs are ubiquitous in data science and sports analytics. They are a very efficient and accessible way to encode tables. Think of a CSV as data in an Excel or Google Sheets spreadsheet. In fact, you can easily save an Excel or Google Sheets spreadsheet as a CSV and easily load the data into R.
 
+Now, we will look to acquire data for some examples. There are three big websites for baseball data and analytics that you will likely rely on the most: [**Fangraphs**](https://www.fangraphs.com/) (which is by far the farthest along analytically), [**Baseball Reference**](https://www.baseball-reference.com/) (typically the best for getting raw data), and [**Baseball Savant**](https://baseballsavant.mlb.com/). If you are looking for more ways to learn about baseball analytics, [Fangraphs](https://www.fangraphs.com/) articles are a great place to start!
+
+For this notebook, we will get our data from *Baseball Reference*, specifically utilizing the 2023 batting leaderboard. Navigate to this link in your browser: [2023 batting leaderboard data](https://www.baseball-reference.com/leagues/majors/2023-standard-batting.shtml). The screen you get should look like the following:
+
+![Getting Data from *Baseball Reference*](./images/baseball_reference_screen_1.png)
+Scroll down to where it says *Player Standard Batting*. When you find this, your screen should look like the following:
+![Getting Data from *Baseball Reference*](./images/baseball_reference_screen_2.png)
+As shown below, click "Share & Export" to the right of the "Player Standard Batting" header.
+![Getting Data from *Baseball Reference*](./images/baseball_reference_screen_3.png)
+Click "Get table as CSV (for Excel)". A few notes on this:
+
+* It is better to use "Get table as CSV (for Excel)" than "Get as Excel Workbook" because the Excel Workbook direct option ahs a limit on how much rows of data can be extracted that is often less than the overall size of the dataset.
+
+* A **CSV**, which stands for "comma separated variables," is a type of file where content in different columns is separated by commas and content in different rows is separated by new-line characters (that is, the character corresponding to the "enter" or "return" key on your keyboard). CSVs are ubiquitous in data science and sports analytics. They are a very efficient and accessible way to encode tables. Think of a CSV as data in an Excel or Google Sheets spreadsheet. In fact, you can easily save an Excel or Google Sheets spreadsheet as a CSV and easily load the data into R.
+
+After clicking "Get table as CSV (for Excel)," your screen should look like the following (note that I'm only showing the first 10 batters, but you should have considerably more):
+
+![Getting Data from *Baseball Reference*](./images/baseball_reference_screen_4.png)
+
+Open a program of your choice that can work with text files. I recommend `Notepad` (especially if you are on a PC), but there are lots of basic programs that can perform this functionality. Paste this data. Save this file as a `.csv` file (you will likely need to change the file format to `.csv` when saving, as it is unlikely to be the default for this program). Make sure to name the file `br_batting_leaderboard_2023.csv` and to **place it in the same folder as where you have saved this notebook**.
+
+Now, we can read this CSV file into a dataframe in R using the `read_csv` function.
+
 ```{r, warning = FALSE, message = FALSE}
 batting_leaderboard_23 = read_csv("br_batting_leaderboard_2023.csv")
 ```
+Let's take a quick look at our data:
+```{r}
+reactable(batting_leaderboard_23, searcable = TRUE, filterable = TRUE)
+```
+Note that `reactable` is a function in the `reactable` library I loaded that simply lets us view dataframes more nicely and interactively. It would have been perfectly okay to instead just include `batting_leaderboard_23` to display the dataframe without using `reactable`, but we use it here to demonstrate its usefulness in displaying dataframes. 
 
+We need to clean up this data a little. Much of this you will do as we explore different functions in R below, but, to start, I will take care of some of the more complex stuff for you using the following functions below I defined. No need to understand the code with*in* these functions. Just make sure you undertand the idea that I can take a dataframe, design and call functions on it, and have transformed it into an updated dataframe that better suits my needs for analysis.
 
 ```{r}
 remove_lg_avg_summary = function(df) {
@@ -139,6 +168,11 @@ batting_leaderboard_23 = identify_numeric_columns(batting_leaderboard_23)
 
 Here, note that I define three functions myself: `remove_lg_avg_summary`, `remove_special_characters`, and `identify_numeric_columns.` These functions are somewhat complicated and firmly beyond the scope of this tutorial. At a high level, `remove_lg_avg_summary` removes the last row of the initial *Baseball Reference* dataframe (which is desirable because this is league-average row inserted by baseball reference that does not actually correspond to a player season). `remove_special_characters` removes asterisks, number signs, and other special characters appended to player names indicating footnotes and additional references on the *Baseball Reference* website, which is both not of interest and problematic for us since we will want to ensure that, e.g., Shohei Ohtani is always listed as `Shohei Ohtani` and never `Shohei Ohtani*` or `Shohei Ohtani#` for lookup purposes. Finally, `identify_numeric_columns` tells R that columns that look like they contain numbers should be interpreted as containing information about a numeric variable. This is trivial to a human but important for how R handles various operations when it can't detect this automatically. No need to understand the code inside any of these functions... it's a little more complicated than we want to focus on right now. Just understand the idea that I can take a dataframe and pass it as an argument to a function to manipulate it in a way that better suits my needs.
 
+Let's take one more look at our data: much cleaner now!
+```{r}
+reactable(batting_leaderboard_23, searchable = TRUE, filterable = TRUE)
+```
+
 ## The Piping Operator
 In R, the sequence of characters `%>%` is special: it is called the **piping operator**. The piping operator will likely seem weird and confusing at first but in the end will be second-nature and uber-convenient. The piping operator is defined in the form of [object] %>% [name of function that takes at least one object]. The key of the piping operator is that it takes the object before the pipe and passes it as the first argument to the function immediately following the piping operator. 
 
@@ -167,7 +201,7 @@ sum
 ```
 Now consider doing this with the piping operator:
 ```{r}
-# Traditional Method
+# Piping Method
 sum = add(3, 6) %>%
   subtract(5) %>%
   add(4)
@@ -267,6 +301,10 @@ bl23_calculating_BA = NULL
 ### Exercise: `MUTATE` #3.
 Read the definition for [**on-base percentage**](https://www.mlb.com/glossary/standard-stats/on-base-percentage). Update your implementation in the previous cell to calculate it using a call to *mutate*. After performing this computation, observe that `OPS` is defined as the sum of on-base percentage (`OBP`) and slugging (`SLG`). Write another mutate statement in the previous cell to compute `OPS` from scratch. Does your answer match the value in the initial `OPS` column of the dataset?
 
+```{r}
+# YOUR SOLUTION HERE
+```
+
 ### Exercise: Reflection
 No coding to do here. Just looking for your thoughts. At this point, you have analyzed the underlying calculation of batting average (`BA`), on-base percentage (`OBP`), slugging (`SLG`), and on-base-plus-slugging (`OPS`). In a paragraph or two, analyze the strengths and weaknesses of each metric. In relation to winning baseball games, which do you think provides the most complete picture of the offensive contributions of a player?
 
@@ -297,8 +335,8 @@ There's a lot going on here. Let's dissect it:
 
 * It's worth discussing the `across` function and its unique format in more detail. `across` is used within a `mutate` subject to the following format:
 [dataframe] = [dataframe] %>%
-  mutate(across([condition], ~[function]))
-In our example, we use our `batting_leaderboard_23` dataframe with the condition either being `where(is.integer)` or `where(is.double)` to extract a vector consisting of all columns with decimal-like data and all columns of round-number-like data, respectively. We then apply either the `mean` or `sum` function depending on the situation (rate-based metric vs. volume-based metric). Checkout the result:
+  mutate(across([condition], ~[function([arguments])]))
+In our example, we use our `batting_leaderboard_23` dataframe with the condition either being `where(is.integer)` or `where(is.double)` to extract a vector consisting of all columns with decimal-like data and all columns of round-number-like data, respectively. We then apply either the `mean` or `sum` function depending on the situation (rate-based metric vs. volume-based metric). Our [arguments] is either `sum(., na.rm = TRUE)` or `mean(., na.rm = TRUE)`. Here, the `.` refers to whatever vector has been selected via the `across` statement and [condition] (it is a column from the table). `na.rm = TRUE` means to remove any non-numeric or unknown values (often denoted as `NA`s) when performing the calculation and can be important to include to avoid encountering errors. Checkout the result:
 ```{r}
 bl23_consolidated = batting_leaderboard_23 %>%
   group_by(Name) %>%
