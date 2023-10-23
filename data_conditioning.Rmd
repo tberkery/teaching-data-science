@@ -23,8 +23,8 @@ library(reactable) # This library lets us display our data in a pretty and conve
 library(ggplot2) # This library assists with data visualization.
 ```
 
-What happened? Did you get lots of errors? That's because these libraries haven't been *installed* locally onto your computer yet. Fortunately, installing them is easy and a one-time process! If running the previous code cell unsuccessfully popped up a message that contains a button labeled "Install" to install the libraries, click "Install". Otherwise, run the following code cell:
-```{r}
+What happened? Did you get lots of errors? That's because these libraries haven't been *installed* locally onto your computer yet. Fortunately, installing them is easy and a one-time process! If running the previous code cell unsuccessfully popped up a message that contains a button labeled "Install" to install the libraries, click "Install". Otherwise, copy and paste the following commands into the "Console" (should be a tab in the bottom left window) and hit enter.
+```{}
 install.packages("tidyverse@2.0.0")
 install.packages("reactable@0.4.1")
 install.packages("ggplot2@3.4.3")
@@ -445,18 +445,18 @@ avg_by_pos = bl23_consolidated %>%
   distinct(Tm, .keep_all = TRUE)
 ```
 
-### Exercise: Summarize #1
+### Exercise: `SUMMARIZE` #1
 By average age of batters, which teams on average have the oldest hitters in baseball? (No additional code needed to answer this)
 ```{}
 YOUR ANSWER HERE
 ```
-### Exercise: Summarize #2
+### Exercise: `SUMMARIZE` #2
 In 2023, which team do you think was the best offensive team in baseball, and why? (No additional code needed to answer this)
 ```{}
 YOUR ANSWER HERE
 ```
 
-An interesting note is that there is actually another way we could have assembled this summary by team using a function called `summarize`. I find that this can be more complex to write but much cleaner and faster sometimes if written correctly.
+An interesting note is that there is actually another way we could have assembled this summary by team using a function called [`summarize`](https://dplyr.tidyverse.org/reference/summarise.html). I find that this can be more complex to write but much cleaner and faster sometimes if written correctly.
 
 Let's simplify the example some to only consider BA, OBP, SLG, and OPS.
 
@@ -491,11 +491,12 @@ avg_by_team = bl23_consolidated %>%
     mean_OPS = mean(OPS, na.rm = TRUE),
     sd_OPS = sd(OPS, na.rm = TRUE)
   ) %>%
+  select(-c(BA, OBP, SLG, OPS)) %>%
   distinct(Tm, .keep_all = TRUE)
 reactable(avg_by_team, searchable = TRUE, filterable = TRUE)
 ```
 
-### Exercise: `SUMMARIZE` #1
+### Exercise: `SUMMARIZE` #3
 Repeat the analysis conducted in the prior example using `Age` instead of `Tm` (team). Specifically, show the average and standard deviation of each numeric statistic in the `bl23_consolidated` dataframe by age. I encourage you to use `summarize` for this quesiton but will accept an answer that uses `mutate` properly to achieve the same result.
 
 ```{r}
