@@ -15,5 +15,10 @@ By this point, you have completed the data conditioning tutorial and have a fami
 
 Joins provide a framework for uniting records across multiple tables by specifying a methodology for relating records. The idea is to "join" multiple tables together into a single table with more information. It is important to highlight that the concept of joins is not at all unique to R (in fact, most of the earlier tidyverse functions conceptually aren't limited to just R either). For example, Structured Query Language (abbreviated SQL and pronounced "sequel"), which is a language for pulling data from databases, has select, distinct, group by, filter, and join statements (among many others) that work in a similar manner. However, we will focus on introducing joins for the purpose of building your knowledge of how to analyze data in R with a mindset that understanding how these concepts work in one language is a great way to be able to easily learn to use them in other languages as well.
 
-## Inner Joins
+## Inner Join
 
+## Left Join
+
+## Right Join
+
+## Full Join
