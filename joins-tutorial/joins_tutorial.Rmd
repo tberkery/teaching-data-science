@@ -1,6 +1,6 @@
 ---
-title: "Joins"
-author: "Tad Berkery"
+title: "Joins and Visualizations in R"
+author: "Tad Berkery" # here, replace my name with your name
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -8,6 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+Tutorial developed by Tad Berkery.
 
 ## Load Libraries
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
@@ -23,6 +25,8 @@ install.packages("reactable")
 install.packages("ggplot2")
 ```
 
+# Joins
+
 ## Introduction
 
 By this point, you have completed the data conditioning tutorial and have a familiarity with libraries, functions, dataframes, the piping operator, and many foundational `tidyverse` functions, including `SELECT`, `MUTATE`, `GROUP BY`, `FILTER`, and `SUMMARIZE`. Now, we will build on your understanding of these functions and discuss another key series of functions: joins.
@@ -30,7 +34,7 @@ By this point, you have completed the data conditioning tutorial and have a fami
 Joins provide a framework for uniting records across multiple tables by specifying a methodology for relating records. The idea is to "join" multiple tables together into a single table with more information. It is important to highlight that the concept of joins is not at all unique to R (in fact, most of the earlier tidyverse functions conceptually aren't limited to just R either). For example, Structured Query Language (abbreviated SQL and pronounced "sequel"), which is a language for pulling data from databases, has select, distinct, group by, filter, and join statements (among many others) that work in a similar manner. However, we will focus on introducing joins for the purpose of building your knowledge of how to analyze data in R with a mindset that understanding how these concepts work in one language is a great way to be able to easily learn to use them in other languages as well.
 
 ## Acquire Data
-Recall that in the last tutorial we reviewed how to acquire data easily from *Baseball Reference* on its website. Download the 2023 "Player Standard Batting" table (remember that this is the *second* table on this webpage), the 2022 "Player Standard Batting" table, and the 2021 "Player Standard Batting" table. Make sure that the CSVs for each end up in this directory named in the format "br_batting_leaderboard_[year].csv".
+Recall that in the last tutorial we reviewed how to acquire data easily from [*Baseball Reference*](https://www.baseball-reference.com/) on its website. Download the [2023 "Player Standard Batting" table](https://www.baseball-reference.com/leagues/majors/2023-standard-batting.shtml) (remember that this is the *second* table on this webpage), the [2022 "Player Standard Batting" table](https://www.baseball-reference.com/leagues/majors/2022-standard-batting.shtml), and the [2021 "Player Standard Batting" table](https://www.baseball-reference.com/leagues/majors/2021-standard-batting.shtml). Make sure that the CSVs for each end up in this directory named in the format "br_batting_leaderboard_[year].csv".
 
 ```{r, message = FALSE, warning = FALSE}
 bl_23 = read_csv("br_batting_leaderboard_2023.csv")
@@ -90,6 +94,7 @@ bl_21 = bl_21 %>%
 # YOUR SOLUTION HERE
 ```
 
+## Motivating Joins
 Imagine that you are considering signing some batters and want to take a cursory look at their stats. You could solely consider their stats in the most recent year, but having several years might paint a more complete picture. How can you consider multiple seasons within a single dataframe (instead of having to manually search for, e.g. Christian Walker, in 3 separate dataframes)?
 
 One way to do this is to **join** dataframes together.
@@ -143,14 +148,89 @@ Note that the list of players I picked in each subset varies by season.
 On the defined subsets, let's join the batting data from the 2022 season and 2023 season by player name. (Note the format of this... two dataframes and a criterion involving their columns is very explicitly identified! Try to do this when talking about joins as your first learn them.)
 
 ```{r, warning = FALSE, message = FALSE}
-joined_22_23 = inner_join(bl_23_sub, bl_22_sub, by = c('Name'))
+joined_22_23 = inner_join(bl_23_sub, bl_22_sub, by = c('Name' = 'Name'))
 reactable(joined_22_23, sortable = TRUE)
 ```
 
-Note that we call the `inner_join` function (this comes from the `tidyverse`... think back to libraries from last tutorial) and 
+Note that we call the `inner_join` function (this comes from the `tidyverse`... think back to libraries from last tutorial) and specify the `Name` column as the criteria to join on.
 
-# A Word of Warning
+* Note that the first dataframe provided is `bl_23_sub` and that the second dataframe provided is `bl_22_sub`. Think directionally for a second: this means that `bl_23_sub` is the *left* dataframe and `bl_22_sub` is the right dataframe. For this exact command, that distinction doesn't matter. However, in subsequent commands and more complicated joins, it will matter a lot.
 
+* Note here that we are choosing to perform an `inner_join`. **An inner join only keeps contents from the left dataframe that also have matches (as defined by your criteria in the `by` clause) in the right dataframe.** This is very important to understand well in time (although it's okay if it doesn't make sense right this second). In contrast to an inner join, a `left_join` (this, too, is a function in R) is a form of outer join where every column in the left dataframe is included regardless of whether it has a match in the right dataframe.
+
+* Note that we end up with `.x` and `.y` suffixes in our column names. A dataframe isn't permitted to have two columns with the same name, so this is how the computer compensates. However, it is very inconvenient (and in the end often borderline impossible) to have to remember that `.x` corresponds to the 2023 season value (since 2023 is the left dataframe) and `.y` corresponds to the 2022 season value (since 2022 is the right dataframe). We can fix this by adding a specification of suffixes as an argument to the inner join function, as shown in this revised command (below). Note that we use `c([element], [element])` notation (the `c()` format indicates a *vector*) and that we put the label we want appended to the name of every column from the left dataframe as the first element and that of the right dataframe as the second.
+
+```{r, message = FALSE, warning = FALSE}
+joined_22_23_sub = inner_join(bl_23_sub, bl_22_sub, by = c('Name' = 'Name'), suffix = c('_23', '_22'))
+reactable(joined_22_23_sub, sortable = TRUE)
+```
+
+### Exercise: Order of Dataframes in Joins
+I decide to rename the `Name` column in `bl_23_sub` to `Player_Name`. Rewrite the above inner join to account for this twist. To ensure the following code still works even if your answer to this question is wrong, please replace `NULL` with your inner join call (i.e. save the result of your code to this question in a new variable *not* named `joined_22_23`).
+```{r}
+bl_23_sub_renamed = bl_23_sub %>%
+  rename(Player_Name = Name)
+joined_22_23_sub_fresh = NULL # REPLACE NULL WITH YOUR SOLUTION
+# A few rules:
+# - You cannot simply use the rename function again to trivially solve this problem.
+# - You must write an inner join and use bl_23_sub_renamed inside of it. You may not use bl_23_sub in your join.
+```
+
+### Exercise: Find My Error
+What is wrong with the following? The code runs fine, but there is an error that makes its output misleading. Describe the error in words and then fix the error in code.
+```{r, warning = FALSE, message = FALSE}
+theres_an_error = bl_23_sub %>%
+  inner_join(bl_22_sub, by = c('Name' = 'Name'), suffix = c('_22', '_23'))
+reactable(theres_an_error, sortable = TRUE)
+```
+Hint: if you can't find the error syntactically, pick a player who appears in both dataframes and lookup his stats. This should help to illuminate the issue.
+
+### Exercise: Putting It All Together
+Now do an inner join of the `bl_23` dataframe and the `bl_22` dataframe (the entirety of it, not just a subset).
+```{r}
+joined_22_23 = NULL # REPLACE NULL WITH YOUR SOLUTION
+```
+Now join `joined_22_23` to `bl_21`. Hint: if you get an error saying one of the columns you specified in the `by` clause isn't in the respective dataframe it needs to be in based on its location in the `by` clause, try using `colnames` to make sure you got the column name correct.
+```{r}
+colnames(bl_21)
+# colnames(joined_22_23)
+# uncomment the previous line (remove the "#") once you have solved the previous example
+# Code here and above in this cell relates to the hint.
+
+# YOUR SOLUTION HERE
+```
+
+### Exercise: Left Joins
+You perform a left join as follows:
+```{r, warning = FALSE, message = FALSE}
+left_joined_latest_seasons = left_join(bl_23_sub, bl_22_sub, by = c('Name' = 'Name'), suffix = c('_23', '_22'))
+reactable(left_joined_latest_seasons, sortable = TRUE)
+```
+
+How is the `left_joined_latest_seasons` dataframe different than `joined_22_23`? Just comment (no code needed)
+```{}
+YOUR SOLUTION HERE
+```
+
+This time, run the following command. How is the `left_joined_latest_seasons` dataframe different from the `left_joined_latest_seasons_updated` dataframe? Why did this happen?
+```{r, warning = FALSE, message = FALSE}
+left_joined_latest_seasons_updated = left_join(bl_22_sub, bl_23_sub, by = c('Name' = 'Name'), suffix = c('_22', '_23'))
+reactable(left_joined_latest_seasons_updated, sortable = TRUE)
+```
+```{}
+YOUR SOLUTION HERE
+```
+
+### Challenge: Sebastian Aho and Hockey
+(Optional) In hockey, if you ran a join by simply player name, "Sebastian Aho" would likely cause problems and unexpected behavior in your join. Why? (Hint: this is very much a find-a-needle-in-a-haystack type of question... don't worry or spend too much time on it... it's just a little piece of sports analyst trivia). Why do you think leagues tend to assign players numerical unique IDs?
+```{}
+# YOUR ANSWER HERE
+```
+Another hint: what "team" does "Sebastian Aho" play for?
+
+## A Word of Warning
+
+It is very important to specify the `by` clause in a join correctly. If you don't and it doesn't yield a syntax error, it often will result in basically trying to match every row in the left dataframe to every row in the right dataframe. For big datasets, this is very computationally expensive, takes forever, and won't yield a functional result for what you were aiming to build. If your joins in this tutorial aren't running quickly, this is likely what is happening, and you'll need to make revisions.
 
 ### Exercise: Retirement, Debuts, and More
 
@@ -219,7 +299,7 @@ Challenge (Optional): instead of typing filter three times, redo the first part 
 # YOUR SOLUTION HERE
 ```
 
-Challenge (Optional and Complex): instead of using an average or a weighted average like we did above to form a batting average projection, use a linear regression model. Research linear regression as a concept first if you are not familiar with it. Then research the `lm()` function in R and write an appropriate function call. Describe your results.
+Challenge (Optional and Complex): instead of using an average or a weighted average like we did above to form a batting average projection, use a linear regression model. Research linear regression as a concept first if you are not familiar with it. Then research the `lm()` function in R and write an appropriate function call. Describe your results. This challenge question, unless you are already familiar with linear regression, will likely take quite a bit longer than the other challenge questions in this tutorial (only do if it really interests you).
 ```{r}
 # YOUR SOLUTION HERE
 ```
@@ -227,23 +307,46 @@ Challenge (Optional and Complex): instead of using an average or a weighted aver
 # YOUR COMMENTARY HERE
 ```
 
-### Exercise: Big Changes in Production
-
-
 ### Reflection: Underlying Statistical Biases?
-
+This is tricky but give it a shot. A statistician may very well argue there's a significant issue with our analysis in the prior big example. Specifically, the statistician might take issue with rules, both explicitly by design and implicitly as a result of the functions we call, that might bias our dataset to not be a sample representative of the general population of MLB players. What might be some key points of the statistican's argument? Do you think the statistician is correct? (*Hint*: I think the statistician is right :-D)
 ```{}
 YOUR REFLECTION HERE
 ```
 
-# Exercise:
+# Visualization
 
-### Rookie Debuts
+At this point, you have been introduced to the foundations of how to condition data and join dataframes together. It is time to start making some visualizations. The go-to library for visualizations in R is `ggplot`, which for some reason goes by "ggplot2" when you import it. We have already loaded this library at the start of this module (and won't need to do it again), but you would import it just like any other library: `library(ggplot2)`.
 
-## Inner Join
+Let's make a few example visuals based on the data you created earlier. This is the fun part: we get to make pretty pictures!
 
-## Left Join
+## Scatterplot
 
-## Right Join
+## Histogram
 
-## Full Join
+## Bar Plot
+
+## Box Plot
+
+## Hexagonal Plot
+
+## Exercise: Make Your Own Visuals!
+
+Create three visualizations using ggplot2 of your choosing. There's plenty of data in this document to use, but feel free to go out and acquire more data from *Baseball Reference* to solve fresh problems of interest to you. Try to design each visual so it tells a story. When you are done, present it to a classmate.
+```{r}
+# CODE FOR YOUR 3 VISUALS HERE
+```
+
+Create one really good visualization that relates to Luis Tiant. Note that you will need to go out and acquire data from Tiant's playing years. *Baseball Reference* is likely a great place to start.
+```{r}
+# CODE FOR LUIS TIANT VISUAL
+```
+
+## `ggplot` Reference Sheet
+
+There's a phenomenal online reference sheet that helps tremendously with making `ggplot` visuals. Check it out [here](https://www.maths.usyd.edu.au/u/UG/SM/STAT3022/r/current/Misc/data-visualization-2.1.pdf). It's available a lot of places online. I don't remember most of the syntax for many visuals off the top of my head but consistently can recall it quickly using this cheat sheet!
+
+# Conclusion
+
+Congratulations on your hard work and for mastering even more areas of R. By now, you have a solid foundation in the basics and, with consistent practice, can take on your own data science projects. Personally, I love using sports as a way to learn data science. I once built a simulation framework to project playoff and championship probabilities for fantasy football teams and generate my own analytical projections every year. I used sports data as a way to practice building many types of models. Eventually, after a bunch of individual projects, I started doing work for teams. Being able to tell them about projects I had done and what I had learned from doing them helped a lot. The point is that if this is something you really enjoy (and it's okay to not know whether it is yet) it can be a great way to learn a lot of powerful computer science in an enjoyable way. You now have exposure to the foundational basics necessary to get started, and I'm always happy to chat if you have ideas or questions. Keep up the great work!
+
+
