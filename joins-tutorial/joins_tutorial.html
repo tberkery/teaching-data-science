@@ -11,7 +11,7 @@
 
 <meta name="author" content="Tad Berkery" />
 
-<meta name="date" content="2023-11-03" />
+<meta name="date" content="2023-11-08" />
 
 <title>Joins</title>
 
@@ -352,13 +352,22 @@ display: none;
 
 <h1 class="title toc-ignore">Joins</h1>
 <h4 class="author">Tad Berkery</h4>
-<h4 class="date">2023-11-03</h4>
+<h4 class="date">2023-11-08</h4>
 
 </div>
 
 
-<div id="introduction" class="section level1">
-<h1>Introduction</h1>
+<div id="load-libraries" class="section level2">
+<h2>Load Libraries</h2>
+<p>If any of these libraries aren’t yet installed (i.e. you get an error
+when executing the above code cell), copy and paste the following into
+the Console and hit enter.</p>
+<pre><code>install.packages(&quot;tidyverse&quot;)
+install.packages(&quot;reactable&quot;)
+install.packages(&quot;ggplot2&quot;)</code></pre>
+</div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
 <p>By this point, you have completed the data conditioning tutorial and
 have a familiarity with libraries, functions, dataframes, the piping
 operator, and many foundational <code>tidyverse</code> functions,
@@ -368,7 +377,51 @@ Now, we will build on your understanding of these functions and discuss
 another key series of functions: joins.</p>
 <p>Joins provide a framework for uniting records across multiple tables
 by specifying a methodology for relating records. The idea is to “join”
-multiple tables together into a single table with more information.</p>
+multiple tables together into a single table with more information. It
+is important to highlight that the concept of joins is not at all unique
+to R (in fact, most of the earlier tidyverse functions conceptually
+aren’t limited to just R either). For example, Structured Query Language
+(abbreviated SQL and pronounced “sequel”), which is a language for
+pulling data from databases, has select, distinct, group by, filter, and
+join statements (among many others) that work in a similar manner.
+However, we will focus on introducing joins for the purpose of building
+your knowledge of how to analyze data in R with a mindset that
+understanding how these concepts work in one language is a great way to
+be able to easily learn to use them in other languages as well.</p>
+</div>
+<div id="acquire-data" class="section level2">
+<h2>Acquire Data</h2>
+<p>Recall that in the last tutorial we reviewed how to acquire data
+easily from <em>Baseball Reference</em> on its website. Download the
+2023 “Player Standard Batting” table (remember that this is the
+<em>second</em> table on this webpage), the 2022 “Player Standard
+Batting” table, and the 2021 “Player Standard Batting” table. Make sure
+that the CSVs for each end up in this directory named in the format
+“br_batting_leaderboard_[year].csv”.</p>
+<pre class="r"><code>bl_23 = read_csv(&quot;br_batting_leaderboard_2023.csv&quot;)
+bl_22 = read_csv(&quot;br_batting_leaderboard_2022.csv&quot;)
+bl_21 = read_csv(&quot;br_batting_leaderboard_2021.csv&quot;)</code></pre>
+<div id="challenge" class="section level3">
+<h3>Challenge</h3>
+<p>If you are extra curious about R and want to learn more (beyond just
+this tutorial), google what a for loop is and checkout the
+<code>paste0</code> function online. Then see if you can write a for
+loop that delivers the same functionality of the previous cell. Would it
+save you lines of code if, say, I asked you to read a CSV for every
+season between 2000 and today?</p>
+</div>
+</div>
+<div id="inner-join" class="section level2">
+<h2>Inner Join</h2>
+</div>
+<div id="left-join" class="section level2">
+<h2>Left Join</h2>
+</div>
+<div id="right-join" class="section level2">
+<h2>Right Join</h2>
+</div>
+<div id="full-join" class="section level2">
+<h2>Full Join</h2>
 </div>
 
 

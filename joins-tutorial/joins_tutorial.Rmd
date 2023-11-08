@@ -9,11 +9,236 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Load Libraries
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(reactable)
+library(ggplot2) # We will talk about this library (not previously introduced) today.
+```
+
+If any of these libraries aren't yet installed (i.e. you get an error when executing the above code cell), copy and paste the following into the Console and hit enter.
+```{}
+install.packages("tidyverse")
+install.packages("reactable")
+install.packages("ggplot2")
+```
+
 ## Introduction
 
 By this point, you have completed the data conditioning tutorial and have a familiarity with libraries, functions, dataframes, the piping operator, and many foundational `tidyverse` functions, including `SELECT`, `MUTATE`, `GROUP BY`, `FILTER`, and `SUMMARIZE`. Now, we will build on your understanding of these functions and discuss another key series of functions: joins.
 
 Joins provide a framework for uniting records across multiple tables by specifying a methodology for relating records. The idea is to "join" multiple tables together into a single table with more information. It is important to highlight that the concept of joins is not at all unique to R (in fact, most of the earlier tidyverse functions conceptually aren't limited to just R either). For example, Structured Query Language (abbreviated SQL and pronounced "sequel"), which is a language for pulling data from databases, has select, distinct, group by, filter, and join statements (among many others) that work in a similar manner. However, we will focus on introducing joins for the purpose of building your knowledge of how to analyze data in R with a mindset that understanding how these concepts work in one language is a great way to be able to easily learn to use them in other languages as well.
+
+## Acquire Data
+Recall that in the last tutorial we reviewed how to acquire data easily from *Baseball Reference* on its website. Download the 2023 "Player Standard Batting" table (remember that this is the *second* table on this webpage), the 2022 "Player Standard Batting" table, and the 2021 "Player Standard Batting" table. Make sure that the CSVs for each end up in this directory named in the format "br_batting_leaderboard_[year].csv".
+
+```{r, message = FALSE, warning = FALSE}
+bl_23 = read_csv("br_batting_leaderboard_2023.csv")
+bl_22 = read_csv("br_batting_leaderboard_2022.csv")
+bl_21 = read_csv("br_batting_leaderboard_2021.csv")
+```
+
+Recall from the last tutorial that I define and call several functions to clean up this data. Don't worry about how these work, just note that I call them again here.
+
+```{r, message = FALSE, warning = FALSE}
+remove_lg_avg_summary = function(df) {
+  df = df[-nrow(df), ]
+  df = filter(df, Tm != 'TOT')
+  return(df)
+}
+remove_special_characters = function(df, special_characters) {
+  df[] <- lapply(df, function(x) gsub(special_characters, "", x))
+  return(df)
+}
+
+identify_numeric_columns = function(df) {
+  is_numeric_column <- function(x) {
+    all(grepl("^\\d+\\.?\\d*$", x))
+  }
+  for (col_name in names(df)) {
+    if (is_numeric_column(df[[col_name]])) {
+      df[[col_name]] <- as.numeric(df[[col_name]])
+    }
+  }
+  df = mutate(df, BA = as.numeric(BA), OBP = as.numeric(OBP),
+              SLG = as.numeric(SLG), OPS = as.numeric(OPS),
+              `OPS+` = as.numeric(`OPS+`))
+  return(df)
+}
+
+bl_23 = bl_23 %>%
+  remove_lg_avg_summary() %>%
+  remove_special_characters("[*#]") %>%
+  identify_numeric_columns()
+
+bl_22 = bl_22 %>%
+  remove_lg_avg_summary() %>%
+  remove_special_characters("[*#]") %>%
+  identify_numeric_columns()
+
+bl_21 = bl_21 %>%
+  remove_lg_avg_summary() %>%
+  remove_special_characters("[*#]") %>%
+  identify_numeric_columns()
+
+```
+
+### Challenge
+(Optional) If you are extra curious about R and want to learn more (beyond just this tutorial), google what a for loop is and checkout the `paste0` function online. Then see if you can write a for loop that delivers the same functionality of the previous cell. Would it save you lines of code if, say, I asked you to read a CSV for every season between 2000 and today?
+
+```{r, message = FALSE, warning = FALSE}
+# YOUR SOLUTION HERE
+```
+
+Imagine that you are considering signing some batters and want to take a cursory look at their stats. You could solely consider their stats in the most recent year, but having several years might paint a more complete picture. How can you consider multiple seasons within a single dataframe (instead of having to manually search for, e.g. Christian Walker, in 3 separate dataframes)?
+
+One way to do this is to **join** dataframes together.
+
+First, let's just work with the data for the 2022 and 2023 seasons. Think about merging these two dataframes together. What information do we need?
+
+1. First, it may seem somewhat self-evident, but a join takes place between two dataframes. That means we need to identify what datarames are at play (and soon consider what commonalities they share).
+
+2. Second, in relation to this question of commonalities, we need some rule of thumb on what determines if two rows are related. For our example, a very sensible pick is to say that when rows refer to the same player name, they should be related (we will discuss soon how this is far from foolproof, but it is a sensible starting point for demonstration).
+
+3. Third, we need to specify what columns in *each* dataframe are relevant for searching for the relation we just identified. For example, image our player name again is Christian Walker. It is highly inefficient to search across every cell in each dataframe for "Christian Walker". However, it is sufficiently efficient to search across the "Name" column in each dataframe. We need to specify this when writing joins.
+
+These three decision points are in many ways the key ingredients of a join.
+
+* Specify the two dataframes at play. Keep in mind that you can use the piping operator when doing this (more on this below).
+
+* Specify what columns (*at least* one from *each* dataframe) establish the relationship. This is often called by **by** clause or the **on** clause of the join (R uses "by", SQL uses "on"... both refer to the same concept).
+
+At this point, we have motivated the concept of a join. Let's now experiment.
+
+Here I have made two small tables that are subsets of the 2022 and 2023 batting dataframes, respectively. Don't worry too much about how I did this if it doesn't make sense... however, hopefully you understand a good portion of it (the usage of `select` and `filter` is within the scope of last week's tutorial, with the one new modification being that I now use the `%in%` operator which checks to the see if the value of the `Name` column for each row is in a vector [basically a list] of names I specify). Regardless of whether that makes sense, take a look at the contents of each table.
+
+```{r, message = FALSE, warning = FALSE}
+bl_23_sub = bl_23 %>%
+  select(Name, Age, Tm, BA, OBP, SLG, OPS, `OPS+`) %>%
+  filter(Name %in% c("Freddie Freeman", "Ketel Marte", "Paul Goldschmidt", "Corey Seager", "Cody Bellinger", "Matt Chapman", "Shohei Ohtani", "Corbin Carroll"))
+bl_22_sub = bl_22 %>%
+  select(Name, Age, Tm, BA, OBP, SLG, OPS, `OPS+`) %>%
+  filter(Name %in% c("Ronald Acuna Jr.", "Ketel Marte", "Nolan Arenado", "Corey Seager", "Xander Bogaerts", "Matt Chapman", "Shohei Ohtani", "Jorge Soler"))
+bl_21_sub = bl_21 %>%
+  select(Name, Age, Tm, BA, OBP, SLG, OPS, `OPS+`) %>%
+  filter(Name %in% c("Ronald Acuna Jr.", "Ketel Marte", "Nolan Arenado", "Corey Seager", "Cody Bellinger", "Matt Chapman", "Aaron Judge", "Yadier Molina"))
+```
+
+Checkout the **2023** subset:
+```{r, message = FALSE, warning = FALSE}
+reactable(bl_23_sub, sortable = TRUE)
+```
+
+Checkout the **2022** subset:
+```{r, message = FALSE, warning = FALSE}
+reactable(bl_22_sub, sortable = TRUE)
+```
+
+Checkout the **2021** subset:
+```{r, message = FALSE, warning = FALSE}
+reactable(bl_21_sub, sortable = TRUE)
+```
+Note that the list of players I picked in each subset varies by season.
+
+On the defined subsets, let's join the batting data from the 2022 season and 2023 season by player name. (Note the format of this... two dataframes and a criterion involving their columns is very explicitly identified! Try to do this when talking about joins as your first learn them.)
+
+```{r, warning = FALSE, message = FALSE}
+joined_22_23 = inner_join(bl_23_sub, bl_22_sub, by = c('Name'))
+reactable(joined_22_23, sortable = TRUE)
+```
+
+Note that we call the `inner_join` function (this comes from the `tidyverse`... think back to libraries from last tutorial) and 
+
+# A Word of Warning
+
+
+### Exercise: Retirement, Debuts, and More
+
+Suppose I'm stuck in an alternate universe where all I have is R and *Baseball Reference* data. How can I use joins to identify players who retired or are yet to play in the major leagues since the 2021 season? To be clear, these two outcomes are very different, but, for the sake of this exercise, I'm asking you to consider both (to make it possible to solve without added information).
+```{r}
+# YOUR SOLUTION HERE
+```
+
+Yadier Molina is a famous longtime catcher for the St. Louis Cardinals who retired somewhat recently. Using inner joins, identify in what year he retired (another way to frame this... what is one year greater than the last season he played?).
+```{r}
+# YOUR SOLUTION HERE
+```
+
+When did Corbin Caroll debut in the major leagues? Gunnar Henderson? Julio Rodriguez?
+```{r}
+# YOUR SOLUTION HERE
+```
+
+### Exercise: Projecting Future Batting Average
+
+Imagine that you wish to project batting average for players with at least `100` plate appearances in *each* of the previous 3 seasons.
+
+First, use `filter` (likely three times) to enforce this constraint.
+```{r}
+# YOUR SOLUTION HERE
+```
+
+Next, write an inner join that lets you cleanly track batting averages for every player with at least `100` plate appearances in each year in a single dataframe.
+```{r}
+# YOUR SOLUTION HERE
+```
+
+In words (no code needed for this part), explain why Orioles star Gunnar Henderson and Nationals first baseman Ryan Zimmerman are not in the single dataframe.
+```{}
+YOUR SOLUTION HERE
+```
+
+Imagine a(n) (over)simplistic algorithm for projecting batting average. Let the projection for batting average in `Year n + 1` be the average of observed batting average in `Year n`, `Year n - 1`, and `Year n - 2`. That is, projection of 2024 batting average for any given player is the average of their batting average in 2021, 2022, and 2023. Use `mutate` and your understanding of how averages are calculated to implement this. 
+
+One remark: if your intuition is to use the built-in `mean` function, that's great, and there's a way to do it this way. However, because you are taking an average across `columns`, this will be a little complicated to code (the `mean` function generally operates across grouped `rows`). Accordingly, I recommend implementing this by simply hard-coding that the average of `a`, `b`, and `c` is `(a + b + c) / 3`.
+
+```{r}
+
+```
+
+One of your colleagues makes a great point. Perhaps it makes sense to compute a weighted average by plate appearance. For example, Astros utilityman-turned-starting-centerfielder Mauricio Dubon had 187 plate appearances in 2021, 265 plate appearances in 2022, and 492 plate appearances in 2023. Weighting his batting average in each year equally likely doesn't make sense since he, among other ways to put this, got more plate appearances in 2023 than he did in 2021 and 2022 combined. This time, compute a weighted average. Again, there is a weighted average function and in general when aggregating across rows you should use it, but, since we are aggregating across columns here, I recommend hard-coding in a mutate.
+
+```{r}
+# YOUR SOLUTION HERE
+```
+
+Which 25 hitters do you project to have the highest batting average using this approach?
+```{r}
+# YOUR SOLUTION HERE
+```
+
+Challenge (Optional): this is subtle and is a baseball question relating to specific stat definitions (not a coding question). Why is it a little bit weird to talk about plate appearances when performing a statistical analysis of batting average?
+
+```{}
+YOUR SOLUTION HERE
+```
+
+Challenge (Optional): instead of typing filter three times, redo the first part of this question using a for loop and the `rbind` function (Google this online). Moreover, research the `cbind` function (`cbind` will not be useful in the solution to this challenge question but is similar to `rbind` and worth learning at the same time if you choose to explore this).
+
+```{r}
+# YOUR SOLUTION HERE
+```
+
+Challenge (Optional and Complex): instead of using an average or a weighted average like we did above to form a batting average projection, use a linear regression model. Research linear regression as a concept first if you are not familiar with it. Then research the `lm()` function in R and write an appropriate function call. Describe your results.
+```{r}
+# YOUR SOLUTION HERE
+```
+```{}
+# YOUR COMMENTARY HERE
+```
+
+### Exercise: Big Changes in Production
+
+
+### Reflection: Underlying Statistical Biases?
+
+```{}
+YOUR REFLECTION HERE
+```
+
+# Exercise:
+
+### Rookie Debuts
 
 ## Inner Join
 
