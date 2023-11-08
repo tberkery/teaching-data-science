@@ -278,6 +278,8 @@ One remark: if your intuition is to use the built-in `mean` function, that's gre
 
 One of your colleagues makes a great point. Perhaps it makes sense to compute a weighted average by plate appearance. For example, Astros utilityman-turned-starting-centerfielder Mauricio Dubon had 187 plate appearances in 2021, 265 plate appearances in 2022, and 492 plate appearances in 2023. Weighting his batting average in each year equally likely doesn't make sense since he, among other ways to put this, got more plate appearances in 2023 than he did in 2021 and 2022 combined. This time, compute a weighted average. Again, there is a weighted average function and in general when aggregating across rows you should use it, but, since we are aggregating across columns here, I recommend hard-coding in a mutate.
 
+*Remark*: look closely and you will see that Dubon played for two teams in 2022. Thinking back to last tutorial, remember how we could consolidate the two records (one for each team) that players like Dubon will have for 2022 into a single record. Make sure that this is part of your answer to this question. What happens to Mauricio Dubon rows in the dataframe if you don't do this consolidation when you perform joins, and why?
+
 ```{r}
 # YOUR SOLUTION HERE
 ```
@@ -319,8 +321,85 @@ At this point, you have been introduced to the foundations of how to condition d
 
 Let's make a few example visuals based on the data you created earlier. This is the fun part: we get to make pretty pictures!
 
-## Scatterplot
+You have (hopefully) cleaned your data above like this, but, to make sure you can solve this part of the tutorial even if earlier answers are incorrect, use the following code to consolidate multi-record seasons for a given player.
 
+```{r}
+consolidate_multi_record_seasons = function(df) {
+  df = df %>%
+    group_by(Name) %>%
+    mutate(across(where(is.double), ~mean(., na.rm = TRUE))) %>%
+    mutate(across(where(is.integer), ~sum(., na.rm = TRUE))) %>%
+    distinct(Name, .keep_all = TRUE)
+  return(df)
+}
+bl_23 = consolidate_multi_record_seasons(bl_23)
+bl_22 = consolidate_multi_record_seasons(bl_22)
+bl_21 = consolidate_multi_record_seasons(bl_21)
+```
+
+Then join all of the data together:
+```{r, message = FALSE, warning = FALSE}
+joined_21_22_23 = bl_23 %>%
+  inner_join(bl_22, by = c('Name' = 'Name'), suffix = c("_23", "_22")) %>%
+  inner_join(bl_21, by = c('Name' = 'Name'), suffix = c("", "_21"))
+```
+
+## Scatterplot
+Suppose I want to make a scatterplot of 2022 batting average and 2023 batting average.
+```{r, message = FALSE, warning = FALSE}
+ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23)) +
+  geom_point()
+```
+* Note that we started with the command `ggplot()` and pass the dataframe containing the data we want to plot as the first argument.
+
+* Next, we pass `aes([content])`. `aes` refers to *aesthetics* and is where we specify the x-axis data and the y-axis data using `aes(x = [column], y = [column])`.
+
+* `ggplot` always has the initial ggplot command (with the specified aesthetics inside) followed by a `+` and then a geometric specification. Here, we are telling it to plot points on the graph.
+
+We can also make this visual fancier:
+
+* It would be neat to add colors indicating the number of homeruns hit by the batter. Do players who hit more homeruns tend to have lower batting averages? We add color-coding by homeruns hit in the updated command below.
+
+```{r, warning = FALSE, echo = FALSE}
+ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
+  geom_point() +
+  scale_color_gradient(low = "blue", high = "red") +  # Define the color scale
+  theme_minimal()  # Choose a theme
+```
+
+* This is slightly subtle, but, if two points exactly overlap, you only see it once on the scatterplot since there is no change in intensity regardless of whether a given point is a single point or a million points stacked on top of one another. This can make the visual a little bit deceptive since you cannot necessarily see where points that sit more or less exactly on top of each other are clustered.
+
+```{r, warning = FALSE, echo = FALSE}
+ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
+  geom_point(alpha = 0.5) + # change the intensity of each point
+  scale_color_gradient(low = "blue", high = "red") +
+  theme_minimal()  
+```
+* Suppose we wanted R to fit a curve (with uncertainty bounds shown) to the relationship we observed between 2022 batting average and 2023 batting average. We can do this using ggplot as well. Note that there is someone with a 2023 batting average of 1 and someone with a 2022 batting average over 0.6. These are extreme outliers, which would yield a poor smoothing fit. I will remove them using a filter that requires at least 150 at bats in all years.
+```{r, warning = FALSE, echo = FALSE}
+joined_21_22_23 = joined_21_22_23 %>%
+  filter(AB > 150, AB_22 > 150, AB_23 > 150)
+ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() + # add smoothed line
+  scale_color_gradient(low = "blue", high = "red") +
+  theme_minimal()
+```
+
+* I'm now adding a 45 degree line, which expresses what you would see if every player's batting average performance didn't change year-to-year. You can see how the smoothed fit is different from the hypothetical line to see how strong the relationship is. Note that I have also rescaled the axes
+
+```{r, warning = FALSE, echo = FALSE}
+joined_21_22_23 = joined_21_22_23 %>%
+  filter(AB > 150, AB_22 > 150, AB_23 > 150)
+ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
+  xlim(0, 0.45) + # set x axis scale
+  ylim(0, 0.45) + # set y axis scale
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  geom_abline(intercept = 0, slope = 1, color = "green") + # 45 degree line
+  scale_color_gradient(low = "blue", high = "red") + 
+  theme_minimal()
+```
 ## Histogram
 
 ## Bar Plot
