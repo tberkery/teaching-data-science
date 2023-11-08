@@ -273,7 +273,7 @@ Imagine a(n) (over)simplistic algorithm for projecting batting average. Let the 
 One remark: if your intuition is to use the built-in `mean` function, that's great, and there's a way to do it this way. However, because you are taking an average across `columns`, this will be a little complicated to code (the `mean` function generally operates across grouped `rows`). Accordingly, I recommend implementing this by simply hard-coding that the average of `a`, `b`, and `c` is `(a + b + c) / 3`.
 
 ```{r}
-
+# YOUR SOLUTION HERE
 ```
 
 One of your colleagues makes a great point. Perhaps it makes sense to compute a weighted average by plate appearance. For example, Astros utilityman-turned-starting-centerfielder Mauricio Dubon had 187 plate appearances in 2021, 265 plate appearances in 2022, and 492 plate appearances in 2023. Weighting his batting average in each year equally likely doesn't make sense since he, among other ways to put this, got more plate appearances in 2023 than he did in 2021 and 2022 combined. This time, compute a weighted average. Again, there is a weighted average function and in general when aggregating across rows you should use it, but, since we are aggregating across columns here, I recommend hard-coding in a mutate.
@@ -350,6 +350,7 @@ Suppose I want to make a scatterplot of 2022 batting average and 2023 batting av
 ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23)) +
   geom_point()
 ```
+
 * Note that we started with the command `ggplot()` and pass the dataframe containing the data we want to plot as the first argument.
 
 * Next, we pass `aes([content])`. `aes` refers to *aesthetics* and is where we specify the x-axis data and the y-axis data using `aes(x = [column], y = [column])`.
@@ -360,7 +361,7 @@ We can also make this visual fancier:
 
 * It would be neat to add colors indicating the number of homeruns hit by the batter. Do players who hit more homeruns tend to have lower batting averages? We add color-coding by homeruns hit in the updated command below.
 
-```{r, warning = FALSE, echo = FALSE}
+```{r, warning = FALSE, message = FALSE}
 ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
   geom_point() +
   scale_color_gradient(low = "blue", high = "red") +  # Define the color scale
@@ -369,14 +370,16 @@ ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
 
 * This is slightly subtle, but, if two points exactly overlap, you only see it once on the scatterplot since there is no change in intensity regardless of whether a given point is a single point or a million points stacked on top of one another. This can make the visual a little bit deceptive since you cannot necessarily see where points that sit more or less exactly on top of each other are clustered.
 
-```{r, warning = FALSE, echo = FALSE}
+```{r, warning = FALSE, message = FALSE}
 ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
   geom_point(alpha = 0.5) + # change the intensity of each point
   scale_color_gradient(low = "blue", high = "red") +
   theme_minimal()  
 ```
+
 * Suppose we wanted R to fit a curve (with uncertainty bounds shown) to the relationship we observed between 2022 batting average and 2023 batting average. We can do this using ggplot as well. Note that there is someone with a 2023 batting average of 1 and someone with a 2022 batting average over 0.6. These are extreme outliers, which would yield a poor smoothing fit. I will remove them using a filter that requires at least 150 at bats in all years.
-```{r, warning = FALSE, echo = FALSE}
+
+```{r, warning = FALSE, message = FALSE}
 joined_21_22_23 = joined_21_22_23 %>%
   filter(AB > 150, AB_22 > 150, AB_23 > 150)
 ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
@@ -388,7 +391,7 @@ ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
 
 * I'm now adding a 45 degree line, which expresses what you would see if every player's batting average performance didn't change year-to-year. You can see how the smoothed fit is different from the hypothetical line to see how strong the relationship is. Note that I have also rescaled the axes
 
-```{r, warning = FALSE, echo = FALSE}
+```{r, warning = FALSE, message = FALSE}
 joined_21_22_23 = joined_21_22_23 %>%
   filter(AB > 150, AB_22 > 150, AB_23 > 150)
 ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
@@ -400,18 +403,22 @@ ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
   scale_color_gradient(low = "blue", high = "red") + 
   theme_minimal()
 ```
+
 ## Histogram
 
 We can also use ggplot to make a histogram. Image we want to plot a histogram of how many doubles were hit by each time in 2023.
-```{r, warning = FALSE, echo = FALSE}
+
+```{r, warning = FALSE, message = FALSE}
 ggplot(bl_23, aes(x = `2B`)) +
   geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) + # histogram settings
   labs(title = "Histogram", x = "Values", y = "Frequency")  + # label axes
   theme_minimal()
 ```
+
 # Box Plot
 
 Imagine we wanted to analyze `OPS` by team for the NL West in 2023.
+
 ```{r, warning = FALSE, message = FALSE}
 nl_west_23 = bl_23 %>%
   filter(Tm %in% c("ARI", "LAD", "COL", "SDP", "SFG"))
@@ -420,7 +427,9 @@ ggplot(nl_west_23, aes(x = Tm, y = OPS)) +
   labs(title = "OPS by Team", x = "Team", y = "OPS") +
   theme_minimal()
 ```
+
 Now that we understand how this works, let's also do it for the whole sport (not just the NL West).
+
 ```{r, warning = FALSE, message = FALSE}
 ggplot(bl_23, aes(x = Tm, y = OPS)) +
   geom_boxplot(fill = "lightblue", color = "blue", outlier.color = "red") +
@@ -435,10 +444,10 @@ Think of how impossible this chart would have been to build by hand. Pretty cool
 We can also easily make a bar plot showing average performance by team in a given metric
 ```{r, warning = FALSE, message = FALSE}
 ggplot(bl_23, aes(x = Tm, y = BA)) +
-  geom_bar(stat = "identity", position = "dodge", width = 0.5) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.5) + # bar graph
   labs(title = "Batting by Team for 2023", x = "Team", y = "Metric") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # rotate x-axis labels
 ```
 
 Say we wanted to consider batting average by year for each team. We can switch from one row per player (with multiple seasons spanning across columns) to one row per player season (players who played multiple seasons would have multiple rows). I'm using the function [`rbind`](https://www.statology.org/rbind-in-r/) to do this which basically says, given two dataframes with the same columns, vertically stack one on top of the other to form a single dataframe.
