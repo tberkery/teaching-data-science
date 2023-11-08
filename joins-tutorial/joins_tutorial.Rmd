@@ -402,15 +402,67 @@ ggplot(joined_21_22_23, aes(x = BA_22, y = BA_23, color = HR_22 + HR_23)) +
 ```
 ## Histogram
 
+We can also use ggplot to make a histogram. Image we want to plot a histogram of how many doubles were hit by each time in 2023.
+```{r, warning = FALSE, echo = FALSE}
+ggplot(bl_23, aes(x = `2B`)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) + # histogram settings
+  labs(title = "Histogram", x = "Values", y = "Frequency")  + # label axes
+  theme_minimal()
+```
+# Box Plot
+
+Imagine we wanted to analyze `OPS` by team for the NL West in 2023.
+```{r, warning = FALSE, message = FALSE}
+nl_west_23 = bl_23 %>%
+  filter(Tm %in% c("ARI", "LAD", "COL", "SDP", "SFG"))
+ggplot(nl_west_23, aes(x = Tm, y = OPS)) +
+  geom_boxplot(fill = "lightblue", color = "blue", outlier.color = "red") +
+  labs(title = "OPS by Team", x = "Team", y = "OPS") +
+  theme_minimal()
+```
+Now that we understand how this works, let's also do it for the whole sport (not just the NL West).
+```{r, warning = FALSE, message = FALSE}
+ggplot(bl_23, aes(x = Tm, y = OPS)) +
+  geom_boxplot(fill = "lightblue", color = "blue", outlier.color = "red") +
+  labs(title = "OPS by Team", x = "Team", y = "OPS") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # rotate x-axis labels at 45 degree angle so easier to read
+```
+Think of how impossible this chart would have been to build by hand. Pretty cool that we can make it in just a few clicks in R!
+
 ## Bar Plot
 
-## Box Plot
+We can also easily make a bar plot showing average performance by team in a given metric
+```{r, warning = FALSE, message = FALSE}
+ggplot(bl_23, aes(x = Tm, y = BA)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.5) +
+  labs(title = "Batting by Team for 2023", x = "Team", y = "Metric") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
-## Hexagonal Plot
+Say we wanted to consider batting average by year for each team. We can switch from one row per player (with multiple seasons spanning across columns) to one row per player season (players who played multiple seasons would have multiple rows). I'm using the function [`rbind`](https://www.statology.org/rbind-in-r/) to do this which basically says, given two dataframes with the same columns, vertically stack one on top of the other to form a single dataframe.
 
+```{r, warning = FALSE, message = FALSE}
+bl_23_with_season = bl_23 %>%
+  mutate(Season = "2023")
+bl_22_with_season = bl_22 %>%
+  mutate(Season = "2022")
+bl_21_with_season = bl_21 %>%
+  mutate(Season = "2021")
+bl_by_player_season = bl_23_with_season %>%
+  rbind(bl_22_with_season) %>%
+  rbind(bl_21_with_season)
+
+ggplot(bl_by_player_season, aes(x = Tm, y = BA, fill = Season)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.5) +
+  labs(title = "Batting by Team for 2023", x = "Team", y = "Metric") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 ## Exercise: Make Your Own Visuals!
 
-Create three visualizations using ggplot2 of your choosing. There's plenty of data in this document to use, but feel free to go out and acquire more data from *Baseball Reference* to solve fresh problems of interest to you. Try to design each visual so it tells a story. When you are done, present it to a classmate.
+By now, I've shown you several examples of how to create a variety of visuals. Now it is your turn. Create three visualizations using ggplot2 of your choosing. There's plenty of data in this document to use, but feel free to go out and acquire more data from *Baseball Reference* to solve fresh problems of interest to you. Try to design each visual so it tells a story. When you are done, present it to a classmate.
 ```{r}
 # CODE FOR YOUR 3 VISUALS HERE
 ```
